@@ -1,0 +1,35 @@
+trainer:
+  algorithm: grpo
+  project_name: verl-post-training
+  experiment_name: qwen3-vl-local-grpo
+  total_epochs: 1
+  seed: 3407
+
+model:
+  path: Qwen/Qwen3-VL-8B-Instruct
+  trust_remote_code: true
+
+runtime:
+  backend: vllm
+  base_url: http://127.0.0.1:8010/v1
+  api_key: EMPTY
+  model: Qwen/Qwen3-VL-8B-Instruct
+  timeout_sec: 180
+
+rollout:
+  temperature: 0.7
+  top_p: 1.0
+  top_k: -1
+  max_prompt_length: 4096
+  max_response_length: 8192
+  n_resp_per_prompt: 4
+
+data:
+  train_path: data/rl/train.jsonl
+  val_path: data/rl/val.jsonl
+  media_root: data/rl
+
+reward:
+  final_accuracy_weight: 1.0
+  format_weight: 0.1
+  tool_weight: 0.0

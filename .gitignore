@@ -1,0 +1,14 @@
+.env
+.venv*/
+outputs/
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+
+SFT/data/*
+!SFT/data/dataset_info.json
+!SFT/data/README.md
+
+RL/data/
+
+SFT/notebooks/.ipynb_checkpoints/

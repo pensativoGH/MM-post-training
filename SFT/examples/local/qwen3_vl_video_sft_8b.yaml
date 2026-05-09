@@ -1,0 +1,49 @@
+### model
+model_name_or_path: Qwen/Qwen3-VL-8B-Instruct
+image_max_pixels: 262144
+video_max_pixels: 16384
+trust_remote_code: true
+
+### method
+stage: sft
+do_train: true
+finetuning_type: full
+freeze_vision_tower: false
+freeze_multi_modal_projector: false
+
+### dataset
+dataset: video_agent_sft_demo
+dataset_dir: SFT/data
+media_dir: SFT/data/video_agent_sft_demo
+template: qwen3_vl
+cutoff_len: 16384
+overwrite_cache: true
+preprocessing_num_workers: 8
+dataloader_num_workers: 4
+
+### output
+output_dir: outputs/sft/qwen3_vl_8b_video_local
+logging_steps: 5
+save_steps: 200
+plot_loss: true
+overwrite_output_dir: true
+save_only_model: false
+report_to: tensorboard
+
+### train
+per_device_train_batch_size: 1
+gradient_accumulation_steps: 1
+gradient_checkpointing: true
+learning_rate: 2.0e-5
+num_train_epochs: 3.0
+lr_scheduler_type: cosine
+warmup_ratio: 0.05
+bf16: true
+torch_compile: true
+ddp_timeout: 600
+
+### eval
+# val_size: 0.01
+# per_device_eval_batch_size: 1
+# eval_strategy: steps
+# eval_steps: 200

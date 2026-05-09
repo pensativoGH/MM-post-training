@@ -1,0 +1,53 @@
+### model
+model_name_or_path: Qwen/Qwen3-VL-4B-Thinking
+image_max_pixels: 262144
+video_max_pixels: 16384
+trust_remote_code: true
+
+### method
+stage: sft
+do_train: true
+finetuning_type: lora
+lora_target: all
+lora_rank: 8
+lora_alpha: 16
+lora_dropout: 0.05
+freeze_vision_tower: false
+freeze_multi_modal_projector: false
+
+### dataset
+dataset: procedural_grpo_smoke_image_native
+eval_dataset: procedural_grpo_smoke_image_native_val
+dataset_dir: SFT/data
+media_dir: SFT/data/procedural_grpo_smoke/image_native
+template: qwen3_vl
+cutoff_len: 4096
+overwrite_cache: true
+preprocessing_num_workers: 1
+dataloader_num_workers: 0
+
+### output
+output_dir: outputs/sft/procedural_grpo_smoke_image_native_qwen3vl4b
+logging_steps: 1
+save_steps: 1
+overwrite_output_dir: true
+save_only_model: false
+report_to: none
+
+### train
+per_device_train_batch_size: 1
+per_device_eval_batch_size: 1
+gradient_accumulation_steps: 1
+gradient_checkpointing: true
+learning_rate: 1.0e-5
+num_train_epochs: 1.0
+max_steps: 1
+lr_scheduler_type: cosine
+warmup_ratio: 0.0
+bf16: true
+torch_compile: false
+ddp_timeout: 600
+
+### eval
+eval_strategy: steps
+eval_steps: 1
