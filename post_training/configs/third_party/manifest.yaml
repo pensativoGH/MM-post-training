@@ -1,0 +1,17 @@
+vjepa2:
+  repo_dir: third_party/vjepa2
+  remote_url: https://github.com/facebookresearch/vjepa2.git
+  pinned_revision: 2f4c6f9d8e7a1b3c5d6e7f8091a2b3c4d5e6f708
+  bootstrap_kind: git
+
+wan22:
+  repo_dir: third_party/wan22
+  remote_url: https://github.com/Wan-Video/Wan2.2.git
+  pinned_revision: v2.2.0
+  bootstrap_kind: git
+
+dreamdojo:
+  repo_dir: third_party/dreamdojo
+  remote_url: https://github.com/JeffWang987/DreamDojo.git
+  pinned_revision: 8c7d6e5f4a3b2c1d0e9f8172635443322110ffee
+  bootstrap_kind: git
