@@ -184,13 +184,23 @@ def iter_third_party_revision_statuses(
 
 def _require_string(raw_entry: dict[str, object], field: str, family: str) -> str:
     value = raw_entry.get(field)
-    if not isinstance(value, str) or not value.strip():
+    if value is None:
         raise TypeError(f"Expected {family!r}.{field} to be a non-empty string.")
-    return value
+
+    coerced = str(value).strip()
+    if not coerced:
+        raise TypeError(f"Expected {family!r}.{field} to be a non-empty string.")
+
+    return coerced
 
 
 def _manifest_repo_root(manifest_path: Path) -> Path:
-    return manifest_path.resolve().parents[3]
+    resolved_manifest_path = manifest_path.resolve()
+    manifest_parts = resolved_manifest_path.parts
+    repo_manifest_suffix = ("post_training", "configs", "third_party", "manifest.yaml")
+    if manifest_parts[-len(repo_manifest_suffix) :] == repo_manifest_suffix:
+        return resolved_manifest_path.parents[3]
+    return resolved_manifest_path.parent
 
 
 def _resolve_repo_dir(
@@ -207,9 +217,10 @@ def _resolve_repo_dir(
     if root is None:
         return repo_dir
 
+    resolved_root = Path(root)
     manifest_root = _manifest_repo_root(Path(manifest_path) if manifest_path is not None else MANIFEST_PATH)
     relative_repo_dir = repo_dir.relative_to(manifest_root)
-    return (Path(root) / relative_repo_dir).resolve()
+    return (resolved_root / relative_repo_dir).resolve()
 
 
 def _read_checkout_revision(repo_dir: Path) -> str | None:
