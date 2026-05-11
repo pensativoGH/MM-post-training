@@ -102,12 +102,6 @@ def load_task_config(path: str | Path) -> TaskConfig:
     return TaskConfig.from_mapping(raw_config)
 
 
-def load_config(path: str | Path) -> TaskConfig:
-    """Compatibility alias for the repo-level task config loader."""
-
-    return load_task_config(path)
-
-
 def _coerce_optional_enum(
     value: Any,
     enum_cls: type[TaskType] | type[TrainerBackend] | type[RuntimeBackend],

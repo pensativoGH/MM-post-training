@@ -6,7 +6,7 @@ from .dispatch import (
     dispatch_config,
     resolve_dispatch,
 )
-from .load_config import ConfigValidationError, TaskConfig, load_config, load_task_config
+from .load_config import ConfigValidationError, TaskConfig, load_task_config
 
 __all__ = [
     "ConfigValidationError",
@@ -14,7 +14,6 @@ __all__ = [
     "DispatchPlan",
     "TaskConfig",
     "dispatch_config",
-    "load_config",
     "load_task_config",
     "resolve_dispatch",
 ]
