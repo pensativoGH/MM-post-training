@@ -45,6 +45,8 @@ def run_vjepa2_inference(
         text=True,
     )
 
+    per_example_results = _build_example_results(prepared_manifest)
+    status = _summarize_status(per_example_results)
     result = {
         "model_id": model_id,
         "task_type": task_type,
@@ -55,10 +57,14 @@ def run_vjepa2_inference(
         "returncode": completed.returncode,
         "stdout": completed.stdout,
         "stderr": completed.stderr,
-        "results": _build_example_results(prepared_manifest),
+        "results": per_example_results,
+        "per_example_results": per_example_results,
+        "examples": per_example_results,
+        "per_example_status": {
+            item["example_id"]: item["status"] for item in per_example_results
+        },
+        "status": status,
     }
-    result["per_example_results"] = list(result["results"])
-    result["status"] = _summarize_status(result["results"])
 
     record_path = output_root / f"{split}_result.json"
     record_path.write_text(json.dumps(result, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")

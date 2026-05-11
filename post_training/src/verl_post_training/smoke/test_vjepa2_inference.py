@@ -26,3 +26,25 @@ def run_vjepa2_smoke(
         split=split,
         **kwargs,
     )
+
+
+def main(
+    config: TaskConfig,
+    *,
+    pipeline_manifest: Any = None,
+    output_dir: str | Path | None = None,
+    split: str = "smoke",
+    **kwargs: Any,
+) -> dict[str, object]:
+    """Compatibility entry point for smoke callers."""
+
+    return run_vjepa2_smoke(
+        config,
+        pipeline_manifest=pipeline_manifest,
+        output_dir=output_dir,
+        split=split,
+        **kwargs,
+    )
+
+
+__all__ = ["main", "run_vjepa2_smoke"]

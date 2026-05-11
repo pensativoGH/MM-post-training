@@ -33,6 +33,24 @@ def get_adapter(adapter_key: str) -> RuntimeAdapter:
     return get_runtime_adapter(adapter_key)
 
 
+def select_runtime_adapter(
+    config: TaskConfig | DispatchPlan,
+) -> RuntimeAdapter:
+    return resolve_runtime_adapter(config)
+
+
+def runtime_adapter_for_plan(
+    config: TaskConfig | DispatchPlan,
+) -> RuntimeAdapter:
+    return resolve_runtime_adapter(config)
+
+
+def build_runtime_adapter(
+    config: TaskConfig | DispatchPlan,
+) -> RuntimeAdapter:
+    return resolve_runtime_adapter(config)
+
+
 def resolve_runtime_adapter(
     config: TaskConfig | DispatchPlan,
 ) -> RuntimeAdapter:
@@ -88,6 +106,9 @@ __all__ = [
     "list_runtime_adapters",
     "lookup",
     "resolve",
+    "select_runtime_adapter",
+    "runtime_adapter_for_plan",
     "resolve_runtime_adapter",
     "run_runtime",
+    "build_runtime_adapter",
 ]
