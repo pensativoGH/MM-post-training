@@ -1,6 +1,6 @@
 # Post-Training Pipeline Implementation Plan
 
-Status: Approved plan draft for implementation
+Status: Approved for implementation
 
 ## 1. Purpose
 
@@ -41,7 +41,7 @@ Recommended landing order:
 
 A milestone is considered mergeable only if:
 
-- its acceptance criteria are satisfied
+- its acceptance criteria are satisfied by code and tests in the same branch
 - its tests can run without unpublished local state
 - it does not require a sibling milestone to merge in the same branch
 
@@ -258,7 +258,7 @@ Tests Claude should be able to write:
 
 Objective:
 Create the external dependency boundary before integrating new upstream model
- families.
+families.
 
 Scope:
 
@@ -338,8 +338,8 @@ Acceptance criteria:
 - a repo-level config with `task_type=embedding_inference` and a V-JEPA2 model
   id dispatches to the encoder runtime adapter
 - the wrapper returns normalized output containing enough metadata for a smoke
-  test to assert success, including model id, output location, and per-example
-  result status
+  test to assert success, including `model_id`, `task_type`, `output_dir`, and
+  a per-example result status
 - a smoke run against one or two examples completes without requiring the user
   to manually change into the upstream V-JEPA2 repo
 
@@ -387,7 +387,8 @@ Acceptance criteria:
 - a repo-level config with `task_type=generation_inference` and a Wan model id
   dispatches to the video generation runtime adapter
 - the wrapper writes generated artifacts and a machine-readable metadata file
-  under the configured `output_dir`
+  under the configured `output_dir`; the metadata file records `model_id`,
+  input example ids, and generated artifact paths
 - a smoke run against one or two examples completes without requiring the user
   to operate inside the upstream Wan2.2 repo
 
@@ -439,8 +440,9 @@ Human-blocked:
 Blocked conditions:
 
 - if DreamDojo cannot run within the repo's local-first environment envelope,
-  only the adapter, config, and capability-reporting portions of this milestone
-  should land; actual runnable DreamDojo smoke coverage must move to M9
+  only the adapter, config, dispatch, and capability-reporting portions of this
+  milestone should land; actual runnable DreamDojo smoke coverage must move to
+  M9
 
 Acceptance criteria:
 
@@ -454,6 +456,9 @@ Acceptance criteria:
   changing required user inputs
 - unsupported training combinations fail before launch with a capability error
   that names the requested model family, task type, and backend
+- if DreamDojo runnable support is deferred, the milestone still lands only if
+  the capability-reporting path explicitly marks DreamDojo execution as
+  unavailable instead of attempting a best-effort launch
 
 Tests Claude should be able to write:
 
@@ -493,6 +498,8 @@ Acceptance criteria:
 - a human reviewer records a decision for Wan2.2 training scope
 - a human reviewer records a decision for the long-term `third_party/`
   maintenance strategy
+- each decision is written to a repo-tracked document or issue reference so the
+  next implementation milestone has a stable source of truth
 
 Tests Claude should be able to write:
 
