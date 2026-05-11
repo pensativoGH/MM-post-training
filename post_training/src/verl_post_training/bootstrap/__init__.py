@@ -8,10 +8,12 @@ from .third_party import (
     MANIFEST_PATH,
     ThirdPartyManifestEntry,
     ThirdPartyRevisionStatus,
+    check_revision_status,
     discover_upstream_root,
     get_third_party_entry,
     get_third_party_revision_status,
     iter_third_party_revision_statuses,
+    load_manifest,
     load_third_party_manifest,
 )
 
@@ -23,9 +25,11 @@ __all__ = [
     "REVISION_STATUS_PINNED",
     "ThirdPartyManifestEntry",
     "ThirdPartyRevisionStatus",
+    "check_revision_status",
     "discover_upstream_root",
     "get_third_party_entry",
     "get_third_party_revision_status",
     "iter_third_party_revision_statuses",
+    "load_manifest",
     "load_third_party_manifest",
 ]

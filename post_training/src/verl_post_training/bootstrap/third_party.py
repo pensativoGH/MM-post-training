@@ -56,7 +56,7 @@ def load_third_party_manifest(manifest_path: Path | None = None) -> dict[str, Th
             f"Expected top-level third-party manifest mapping, got {type(raw_manifest).__name__}."
         )
 
-    repo_root = resolved_manifest_path.resolve().parents[3]
+    repo_root = _manifest_repo_root(resolved_manifest_path)
     entries: dict[str, ThirdPartyManifestEntry] = {}
     for family, raw_entry in raw_manifest.items():
         if not isinstance(raw_entry, dict):
@@ -78,6 +78,12 @@ def load_third_party_manifest(manifest_path: Path | None = None) -> dict[str, Th
     return entries
 
 
+def load_manifest(path: Path | None = None) -> dict[str, ThirdPartyManifestEntry]:
+    """Compatibility alias for callers expecting a generic manifest loader name."""
+
+    return load_third_party_manifest(path)
+
+
 def get_third_party_entry(
     family: str,
     *,
@@ -97,21 +103,37 @@ def discover_upstream_root(
     family: str,
     *,
     manifest_path: Path | None = None,
+    base_dir: Path | None = None,
+    repo_root: Path | None = None,
 ) -> Path:
     """Resolve the repo-local checkout directory for one upstream family."""
 
-    return get_third_party_entry(family, manifest_path=manifest_path).repo_dir
+    entry = get_third_party_entry(family, manifest_path=manifest_path)
+    return _resolve_repo_dir(
+        entry.repo_dir,
+        manifest_path=manifest_path,
+        base_dir=base_dir,
+        repo_root=repo_root,
+    )
 
 
 def get_third_party_revision_status(
     family: str,
     *,
     manifest_path: Path | None = None,
+    base_dir: Path | None = None,
+    repo_root: Path | None = None,
 ) -> ThirdPartyRevisionStatus:
     """Report whether a checkout is absent, pinned, or mismatched."""
 
     entry = get_third_party_entry(family, manifest_path=manifest_path)
-    current_revision = _read_checkout_revision(entry.repo_dir)
+    repo_dir = _resolve_repo_dir(
+        entry.repo_dir,
+        manifest_path=manifest_path,
+        base_dir=base_dir,
+        repo_root=repo_root,
+    )
+    current_revision = _read_checkout_revision(repo_dir)
     if current_revision is None:
         status = REVISION_STATUS_ABSENT
     elif current_revision == entry.pinned_revision:
@@ -121,13 +143,30 @@ def get_third_party_revision_status(
 
     return ThirdPartyRevisionStatus(
         family=entry.family,
-        repo_dir=entry.repo_dir,
+        repo_dir=repo_dir,
         pinned_revision=entry.pinned_revision,
         bootstrap_kind=entry.bootstrap_kind,
         remote_url=entry.remote_url,
         status=status,
         current_revision=current_revision,
     )
+
+
+def check_revision_status(
+    family: str,
+    *,
+    manifest_path: Path | None = None,
+    base_dir: Path | None = None,
+    repo_root: Path | None = None,
+) -> str:
+    """Compatibility wrapper that returns only the status label."""
+
+    return get_third_party_revision_status(
+        family,
+        manifest_path=manifest_path,
+        base_dir=base_dir,
+        repo_root=repo_root,
+    ).status
 
 
 def iter_third_party_revision_statuses(
@@ -148,6 +187,29 @@ def _require_string(raw_entry: dict[str, object], field: str, family: str) -> st
     if not isinstance(value, str) or not value.strip():
         raise TypeError(f"Expected {family!r}.{field} to be a non-empty string.")
     return value
+
+
+def _manifest_repo_root(manifest_path: Path) -> Path:
+    return manifest_path.resolve().parents[3]
+
+
+def _resolve_repo_dir(
+    repo_dir: Path,
+    *,
+    manifest_path: Path | None,
+    base_dir: Path | None,
+    repo_root: Path | None,
+) -> Path:
+    if base_dir is not None and repo_root is not None:
+        raise ValueError("Pass only one of base_dir or repo_root.")
+
+    root = base_dir if base_dir is not None else repo_root
+    if root is None:
+        return repo_dir
+
+    manifest_root = _manifest_repo_root(Path(manifest_path) if manifest_path is not None else MANIFEST_PATH)
+    relative_repo_dir = repo_dir.relative_to(manifest_root)
+    return (Path(root) / relative_repo_dir).resolve()
 
 
 def _read_checkout_revision(repo_dir: Path) -> str | None:
@@ -180,9 +242,11 @@ __all__ = [
     "REVISION_STATUS_PINNED",
     "ThirdPartyManifestEntry",
     "ThirdPartyRevisionStatus",
+    "check_revision_status",
     "discover_upstream_root",
     "get_third_party_entry",
     "get_third_party_revision_status",
     "iter_third_party_revision_statuses",
+    "load_manifest",
     "load_third_party_manifest",
 ]
