@@ -215,7 +215,6 @@ milestones:
       - M3
       - M4
       - M5
-    requires_human: true
     human_scope: >
       Runnable DreamDojo support is environment-dependent. If the local-first
       contract cannot support execution, land the adapter, dispatch, and
