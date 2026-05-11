@@ -9,6 +9,13 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
+REPO_ROOT = Path(__file__).resolve().parents[2]
+POST_TRAINING_SRC = REPO_ROOT / "post_training" / "src"
+if str(POST_TRAINING_SRC) not in sys.path:
+    sys.path.insert(0, str(POST_TRAINING_SRC))
+
+from verl_post_training.adapters.dataset.chat_sft import ChatSFTDatasetAdapter
+
 
 DEFAULT_PIPELINE_REPO_NAME = "multimodal-data-pipeline-clean"
 IMAGE_SUFFIXES = {".jpg", ".jpeg", ".png", ".bmp", ".webp"}
@@ -190,17 +197,7 @@ def inject_media_tokens(turns: list[dict[str, str]], images: list[str], videos: 
 
 
 def convert_row(row: dict[str, Any]) -> dict[str, Any]:
-    images, videos = infer_media_lists(row)
-    messages = list(row.get("messages") or row.get("conversation") or [])
-    system, turns = normalize_turns(messages)
-    turns = inject_media_tokens(turns, images, videos)
-    return {
-        "system": system,
-        "tools": "[]",
-        "images": images,
-        "videos": videos,
-        "conversations": turns,
-    }
+    return ChatSFTDatasetAdapter().prepare_row(row)
 
 
 def write_examples(path: Path, examples: list[dict[str, Any]]) -> None:

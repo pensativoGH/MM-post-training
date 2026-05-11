@@ -3,8 +3,16 @@ from __future__ import annotations
 
 import argparse
 import json
+import sys
 from pathlib import Path
 from typing import Any
+
+REPO_ROOT = Path(__file__).resolve().parents[2]
+POST_TRAINING_SRC = REPO_ROOT / "post_training" / "src"
+if str(POST_TRAINING_SRC) not in sys.path:
+    sys.path.insert(0, str(POST_TRAINING_SRC))
+
+from verl_post_training.adapters.dataset.chat_rl import convert_record_to_rl
 
 
 def parse_args() -> argparse.Namespace:
@@ -84,29 +92,16 @@ def convert_records(
 ) -> list[dict[str, Any]]:
     converted: list[dict[str, Any]] = []
     for index, record in enumerate(records):
-        messages = make_messages(record)
-        if len(messages) < 2 or messages[-1]["role"] != "assistant":
-            raise ValueError("Expected final assistant answer in ShareGPT record.")
-
-        assistant_answer = messages.pop()["content"]
-        gold = parse_gold(assistant_answer)
-        images, videos = media_entries(record, media_root, video_sampling=video_sampling)
-
         converted.append(
-            {
-                "prompt": messages,
-                "images": images,
-                "videos": videos,
-                "data_source": data_source,
-                "reward_model": {
-                    "ground_truth": gold,
-                },
-                "extra_info": {
+            convert_record_to_rl(
+                record,
+                config={
                     "index": index,
-                    "gold_response": assistant_answer,
-                    "media_type": "video" if videos else "image",
+                    "media_root": media_root,
+                    "data_source": data_source,
+                    "video_sampling": video_sampling,
                 },
-            }
+            )
         )
     return converted
 
