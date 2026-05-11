@@ -14,7 +14,7 @@ POST_TRAINING_SRC = REPO_ROOT / "post_training" / "src"
 if str(POST_TRAINING_SRC) not in sys.path:
     sys.path.insert(0, str(POST_TRAINING_SRC))
 
-from verl_post_training.adapters.dataset.chat_sft import ChatSFTDatasetAdapter
+from verl_post_training.adapters.dataset import get_dataset_adapter
 
 
 DEFAULT_PIPELINE_REPO_NAME = "multimodal-data-pipeline-clean"
@@ -197,7 +197,8 @@ def inject_media_tokens(turns: list[dict[str, str]], images: list[str], videos: 
 
 
 def convert_row(row: dict[str, Any]) -> dict[str, Any]:
-    return ChatSFTDatasetAdapter().prepare_row(row)
+    adapter = get_dataset_adapter("chat_sft")
+    return adapter.prepare_row(row)
 
 
 def write_examples(path: Path, examples: list[dict[str, Any]]) -> None:

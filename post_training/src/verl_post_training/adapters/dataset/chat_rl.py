@@ -8,8 +8,7 @@ from typing import Any
 
 from .chat_sft import (
     ChatSFTDatasetAdapter,
-    load_manifest,
-    resolve_manifest_rows,
+    coerce_pipeline_rows,
 )
 
 
@@ -18,15 +17,29 @@ class ChatRLDatasetAdapter:
 
     def prepare(
         self,
-        input_manifest: Path,
-        output_dir: Path,
-        split: str,
-        config: dict[str, Any],
+        pipeline_manifest: Any = None,
+        output_dir: Path | None = None,
+        split: str = "train",
+        config: dict[str, Any] | None = None,
+        **kwargs: Any,
     ) -> Path:
-        manifest = load_manifest(input_manifest)
-        rows = resolve_manifest_rows(manifest, split=split, config=config)
+        config = dict(config or {})
+        if "input_manifest" in kwargs and pipeline_manifest is None:
+            pipeline_manifest = kwargs.pop("input_manifest")
+        if kwargs:
+            config.update(kwargs)
+        if pipeline_manifest is None:
+            raise TypeError("Missing required pipeline_manifest or input_manifest.")
+        if output_dir is None:
+            raise TypeError("Missing required output_dir.")
+
+        rows = coerce_pipeline_rows(
+            pipeline_manifest,
+            split=split,
+            config=config,
+        )
         converted = [
-            convert_record_to_rl(record, config={**config, "index": index})
+            self.prepare_row(record, config={**config, "index": index})
             for index, record in enumerate(rows)
         ]
 
@@ -36,6 +49,14 @@ class ChatRLDatasetAdapter:
             for row in converted:
                 handle.write(json.dumps(row, ensure_ascii=True) + "\n")
         return output_path
+
+    def prepare_row(
+        self,
+        record: dict[str, Any],
+        *,
+        config: dict[str, Any] | None = None,
+    ) -> dict[str, Any]:
+        return convert_record_to_rl(record, config=config or {})
 
 
 def convert_record_to_rl(record: dict[str, Any], *, config: dict[str, Any]) -> dict[str, Any]:

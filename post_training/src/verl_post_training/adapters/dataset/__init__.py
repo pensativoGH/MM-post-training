@@ -21,6 +21,7 @@ def _build_registry() -> dict[str, DatasetAdapter]:
 
 ADAPTER_REGISTRY: dict[str, DatasetAdapter] = _build_registry()
 REGISTRY = ADAPTER_REGISTRY
+DATASET_ADAPTER_KEYS = tuple(sorted(ADAPTER_REGISTRY))
 
 
 def get_dataset_adapter(adapter_key: str) -> DatasetAdapter:
@@ -28,7 +29,7 @@ def get_dataset_adapter(adapter_key: str) -> DatasetAdapter:
         return ADAPTER_REGISTRY[adapter_key]
     except KeyError as exc:
         known = ", ".join(sorted(ADAPTER_REGISTRY)) or "none"
-        raise KeyError(
+        raise LookupError(
             f"Unknown dataset adapter {adapter_key!r}. Registered adapters: {known}"
         ) from exc
 
@@ -57,8 +58,13 @@ def entries() -> tuple[DatasetAdapter, ...]:
     return iter_adapters()
 
 
+def list_dataset_adapters() -> tuple[str, ...]:
+    return DATASET_ADAPTER_KEYS
+
+
 __all__ = [
     "ADAPTER_REGISTRY",
+    "DATASET_ADAPTER_KEYS",
     "DatasetAdapter",
     "REGISTRY",
     "entries",
@@ -66,6 +72,7 @@ __all__ = [
     "get_dataset_adapter",
     "iter_adapters",
     "iter_entries",
+    "list_dataset_adapters",
     "lookup",
     "resolve",
 ]

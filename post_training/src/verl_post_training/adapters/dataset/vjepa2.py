@@ -11,9 +11,10 @@ class VJEPA2DatasetAdapter:
 
     def prepare(
         self,
-        input_manifest: Path,
-        output_dir: Path,
-        split: str,
-        config: dict[str, Any],
+        pipeline_manifest: Any = None,
+        output_dir: Path | None = None,
+        split: str = "train",
+        config: dict[str, Any] | None = None,
+        **kwargs: Any,
     ) -> Path:
         raise NotImplementedError("V-JEPA2 dataset preparation is not implemented yet.")

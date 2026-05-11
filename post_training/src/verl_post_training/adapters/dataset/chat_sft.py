@@ -30,13 +30,27 @@ class ChatSFTDatasetAdapter:
 
     def prepare(
         self,
-        input_manifest: Path,
-        output_dir: Path,
-        split: str,
-        config: dict[str, Any],
+        pipeline_manifest: Any = None,
+        output_dir: Path | None = None,
+        split: str = "train",
+        config: dict[str, Any] | None = None,
+        **kwargs: Any,
     ) -> Path:
-        manifest = load_manifest(input_manifest)
-        rows = resolve_manifest_rows(manifest, split=split, config=config)
+        config = dict(config or {})
+        if "input_manifest" in kwargs and pipeline_manifest is None:
+            pipeline_manifest = kwargs.pop("input_manifest")
+        if kwargs:
+            config.update(kwargs)
+        if pipeline_manifest is None:
+            raise TypeError("Missing required pipeline_manifest or input_manifest.")
+        if output_dir is None:
+            raise TypeError("Missing required output_dir.")
+
+        rows = coerce_pipeline_rows(
+            pipeline_manifest,
+            split=split,
+            config=config,
+        )
         examples = [self.prepare_row(row) for row in rows]
 
         output_path = Path(output_dir) / f"{split}.json"
@@ -59,6 +73,18 @@ def load_manifest(path: Path) -> Any:
     if suffix in {".yaml", ".yml"}:
         return yaml.safe_load(text)
     return json.loads(text)
+
+
+def coerce_pipeline_rows(
+    pipeline_manifest: Any,
+    *,
+    split: str,
+    config: dict[str, Any],
+) -> list[dict[str, Any]]:
+    if isinstance(pipeline_manifest, (str, Path)):
+        manifest = load_manifest(Path(pipeline_manifest))
+        return resolve_manifest_rows(manifest, split=split, config=config)
+    return resolve_manifest_rows(pipeline_manifest, split=split, config=config)
 
 
 def resolve_manifest_rows(manifest: Any, *, split: str, config: dict[str, Any]) -> list[dict[str, Any]]:
@@ -124,12 +150,12 @@ def infer_media_lists(row: dict[str, Any]) -> tuple[list[str], list[str]]:
     videos: list[str] = []
     modality = str(row.get("modality") or "").lower()
     for media_path in row.get("media_paths") or []:
-        resolved = str(Path(media_path).resolve())
-        suffix = Path(resolved).suffix.lower()
+        media_path_str = str(media_path)
+        suffix = Path(media_path_str).suffix.lower()
         if modality == "video" or suffix in VIDEO_SUFFIXES:
-            videos.append(resolved)
+            videos.append(media_path_str)
         elif modality == "image" or suffix in IMAGE_SUFFIXES:
-            images.append(resolved)
+            images.append(media_path_str)
         else:
             raise ValueError(f"Unsupported media path for SFT conversion: {media_path}")
     return images, videos

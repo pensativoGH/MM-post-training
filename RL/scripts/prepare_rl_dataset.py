@@ -12,7 +12,7 @@ POST_TRAINING_SRC = REPO_ROOT / "post_training" / "src"
 if str(POST_TRAINING_SRC) not in sys.path:
     sys.path.insert(0, str(POST_TRAINING_SRC))
 
-from verl_post_training.adapters.dataset.chat_rl import convert_record_to_rl
+from verl_post_training.adapters.dataset import get_dataset_adapter
 
 
 def parse_args() -> argparse.Namespace:
@@ -90,10 +90,11 @@ def convert_records(
     data_source: str,
     video_sampling: dict[str, Any] | None = None,
 ) -> list[dict[str, Any]]:
+    adapter = get_dataset_adapter("chat_rl")
     converted: list[dict[str, Any]] = []
     for index, record in enumerate(records):
         converted.append(
-            convert_record_to_rl(
+            adapter.prepare_row(
                 record,
                 config={
                     "index": index,
