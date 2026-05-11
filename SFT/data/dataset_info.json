@@ -101,5 +101,63 @@
       "assistant_tag": "gpt",
       "observation_tag": "observation"
     }
+  },
+  "robovqa_cosmos_sft_q1_train": {
+    "formatting": "sharegpt",
+    "columns": {
+      "messages": "conversations",
+      "images": "images",
+      "videos": "videos",
+      "system": "system",
+      "tools": "tools"
+    },
+    "tags": {
+      "role_tag": "from",
+      "content_tag": "value",
+      "user_tag": "human",
+      "assistant_tag": "gpt",
+      "observation_tag": "observation",
+      "function_tag": "function_call",
+      "system_tag": "system"
+    },
+    "source": {
+      "type": "multimodal-data-pipeline",
+      "pipeline_config": "/home/pensativo/code/multimodal-data-pipeline-clean/configs/videos_all.yaml",
+      "parent_dataset_name": "robovqa_cosmos_sft_q1",
+      "split": "train",
+      "dataset_version_id": "976cb46bc108301f0b787b41",
+      "source_dataset_name": "robovqa_cosmos_sft_q1_train",
+      "row_count": 45541
+    },
+    "file_name": "robovqa_cosmos_sft_q1/train.json"
+  },
+  "robovqa_cosmos_sft_q1_val": {
+    "formatting": "sharegpt",
+    "columns": {
+      "messages": "conversations",
+      "images": "images",
+      "videos": "videos",
+      "system": "system",
+      "tools": "tools"
+    },
+    "tags": {
+      "role_tag": "from",
+      "content_tag": "value",
+      "user_tag": "human",
+      "assistant_tag": "gpt",
+      "observation_tag": "observation",
+      "function_tag": "function_call",
+      "system_tag": "system"
+    },
+    "source": {
+      "type": "multimodal-data-pipeline",
+      "pipeline_config": "/home/pensativo/code/multimodal-data-pipeline-clean/configs/videos_all.yaml",
+      "parent_dataset_name": "robovqa_cosmos_sft_q1",
+      "split": "val",
+      "dataset_version_id": "a2f9ef2238a327ed3ee5fc2a",
+      "source_dataset_name": "robovqa_cosmos_sft_q1_val",
+      "row_count": 460
+    },
+    "file_name": "robovqa_cosmos_sft_q1/val.json"
   }
 }

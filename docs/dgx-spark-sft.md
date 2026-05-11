@@ -52,6 +52,15 @@ Run a specific config:
 ./SFT/scripts/run_dgx_spark_sft.sh SFT/examples/local/qwen3_vl_video_sft_8b.yaml
 ```
 
+Run the RoboVQA pipeline-backed SFT path:
+
+```bash
+PIPELINE_CONFIG_PATH=/home/pensativo/code/multimodal-data-pipeline-clean/configs/videos_all.yaml \
+  ROBOVQA_TRAIN_DATASET_VERSION_ID=976cb46bc108301f0b787b41 \
+  ROBOVQA_VAL_DATASET_VERSION_ID=a2f9ef2238a327ed3ee5fc2a \
+  ./SFT/scripts/run_robovqa_pipeline_sft.sh
+```
+
 Force a fresh in-container bootstrap:
 
 ```bash
