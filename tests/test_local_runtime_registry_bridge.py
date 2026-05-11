@@ -21,18 +21,17 @@ from verl_post_training_runtime.local_runtime import (  # noqa: E402
 
 def test_qwen_selector_keeps_existing_base_url_and_model_id():
     spec = resolve_local_runtime_spec("instruct")
-    assert spec == {
-        "model_id": "Qwen/Qwen3-VL-8B-Instruct",
-        "base_url": "http://127.0.0.1:8011/v1",
-    }
+    assert spec["model_id"] == "Qwen/Qwen3-VL-8B-Instruct"
+    assert spec["base_url"] == "http://127.0.0.1:8011/v1"
+    assert spec["runtime_backend"] == "openai_chat_vllm"
+    assert spec["registry_entry"] is spec["model_entry"]
 
 
 def test_explicit_qwen_model_id_resolves_through_registry():
     spec = resolve_local_runtime_spec("Qwen/Qwen3-VL-8B-Thinking")
-    assert spec == {
-        "model_id": "Qwen/Qwen3-VL-8B-Thinking",
-        "base_url": "http://127.0.0.1:8010/v1",
-    }
+    assert spec["model_id"] == "Qwen/Qwen3-VL-8B-Thinking"
+    assert spec["base_url"] == "http://127.0.0.1:8010/v1"
+    assert spec["runtime_backend"] == "openai_chat_vllm"
 
 
 def test_non_chat_model_is_rejected_before_startup():
