@@ -78,10 +78,16 @@ def load_third_party_manifest(manifest_path: Path | None = None) -> dict[str, Th
     return entries
 
 
-def load_manifest(path: Path | None = None) -> dict[str, ThirdPartyManifestEntry]:
+def load_manifest(
+    manifest_path: Path | None = None,
+    path: Path | None = None,
+) -> dict[str, ThirdPartyManifestEntry]:
     """Compatibility alias for callers expecting a generic manifest loader name."""
 
-    return load_third_party_manifest(path)
+    if manifest_path is not None and path is not None:
+        raise ValueError("Pass only one of manifest_path or path.")
+
+    return load_third_party_manifest(manifest_path if manifest_path is not None else path)
 
 
 def get_third_party_entry(
