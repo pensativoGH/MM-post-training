@@ -155,6 +155,12 @@ def _ensure_backend_task_role(config: TaskConfig) -> None:
             f"trainer_backend={TrainerBackend.VJEPA2_NATIVE.value}, not "
             f"runtime_backend={RuntimeBackend.VJEPA2_NATIVE.value}."
         )
+    if config.trainer_backend == TrainerBackend.WAN_NATIVE:
+        raise DispatchCompatibilityError(
+            "Unsupported task/backend combination: "
+            f"Wan2.2 support is inference-only; use runtime_backend="
+            f"{RuntimeBackend.WAN_NATIVE.value}."
+        )
 
 
 def _ensure_supported_backend(

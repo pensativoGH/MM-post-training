@@ -7,10 +7,14 @@ from ...launch.load_config import TaskConfig
 from ...registry import RuntimeBackend
 from .base import RuntimeAdapter
 from .encoder import EncoderRuntimeAdapter
+from .video_generation import VideoGenerationRuntimeAdapter
 
 
 def _build_registry() -> dict[str, RuntimeAdapter]:
-    adapters: tuple[RuntimeAdapter, ...] = (EncoderRuntimeAdapter(),)
+    adapters: tuple[RuntimeAdapter, ...] = (
+        EncoderRuntimeAdapter(),
+        VideoGenerationRuntimeAdapter(),
+    )
     return {adapter.adapter_key: adapter for adapter in adapters}
 
 
@@ -103,6 +107,7 @@ __all__ = [
     "REGISTRY",
     "RUNTIME_ADAPTER_KEYS",
     "RuntimeAdapter",
+    "VideoGenerationRuntimeAdapter",
     "dispatch_runtime",
     "get_adapter",
     "get_runtime_adapter",
