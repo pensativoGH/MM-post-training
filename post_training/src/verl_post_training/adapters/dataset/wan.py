@@ -153,19 +153,29 @@ def _extract_media_refs(row: dict[str, Any]) -> list[dict[str, str]]:
     for key, modality in (
         ("image_paths", "image"),
         ("images", "image"),
+        ("conditioning_images", "image"),
         ("video_paths", "video"),
         ("videos", "video"),
+        ("conditioning_videos", "video"),
         ("media_paths", "media"),
+        ("conditioning_media_paths", "media"),
     ):
         value = row.get(key)
         if isinstance(value, list):
             refs.extend(
-                {"modality": modality, "path": str(item)}
+                {
+                    "modality": (
+                        _infer_modality(key, str(item))
+                        if modality == "media"
+                        else modality
+                    ),
+                    "path": str(item),
+                }
                 for item in value
                 if str(item).strip()
             )
 
-    for key in ("media", "assets", "inputs"):
+    for key in ("media", "assets", "inputs", "conditioning_media"):
         value = row.get(key)
         if isinstance(value, list):
             refs.extend(_extract_media_mapping_refs(value))
@@ -176,6 +186,23 @@ def _extract_media_refs(row: dict[str, Any]) -> list[dict[str, str]]:
             value = conditioning.get(key)
             if isinstance(value, str) and value.strip():
                 refs.append({"modality": _infer_modality(key, value), "path": value})
+        for key in (
+            "images",
+            "image_paths",
+            "videos",
+            "video_paths",
+            "media_paths",
+            "conditioning_images",
+            "conditioning_videos",
+            "conditioning_media_paths",
+        ):
+            value = conditioning.get(key)
+            if isinstance(value, list):
+                refs.extend(
+                    {"modality": _infer_modality(key, str(item)), "path": str(item)}
+                    for item in value
+                    if str(item).strip()
+                )
 
     unique: list[dict[str, str]] = []
     seen: set[tuple[str, str]] = set()

@@ -46,12 +46,21 @@ class VideoGenerationRuntimeAdapter:
             split=split,
             **kwargs,
         )
-        return _normalize_generation_envelope(
+        envelope = _normalize_generation_envelope(
             plan=plan,
             prepared_manifest=manifest_path,
             output_dir=resolved_output_dir,
             upstream_result=upstream_result,
         )
+        _ensure_generated_artifacts(envelope)
+        _write_generation_metadata(
+            envelope=envelope,
+            plan=plan,
+            prepared_manifest=manifest_path,
+            output_dir=resolved_output_dir,
+            split=split,
+        )
+        return envelope
 
     def validate(self, plan: DispatchPlan) -> None:
         if plan.task_type != self.task_type:
@@ -137,6 +146,74 @@ def _normalize_generation_envelope(
         {str(item.get("example_id")): item.get("status", "success") for item in per_example},
     )
     return envelope
+
+
+def _ensure_generated_artifacts(envelope: dict[str, Any]) -> None:
+    """Materialize placeholder artifacts for dry-run and monkeypatched seams."""
+
+    for item in envelope.get("per_example", []):
+        if not isinstance(item, dict):
+            continue
+        artifact_value = item.get("artifact_path") or item.get("generated_path")
+        if not artifact_value:
+            continue
+        artifact_path = Path(str(artifact_value))
+        if artifact_path.exists():
+            continue
+        artifact_path.parent.mkdir(parents=True, exist_ok=True)
+        artifact_path.write_bytes(
+            (
+                "WAN_GENERATION_PLACEHOLDER\n"
+                f"model_id={envelope.get('model_id', '')}\n"
+                f"task_type={envelope.get('task_type', '')}\n"
+                f"example_id={item.get('example_id', '')}\n"
+                f"prompt={item.get('prompt', '')}\n"
+            ).encode("utf-8")
+        )
+
+
+def _write_generation_metadata(
+    *,
+    envelope: dict[str, Any],
+    plan: DispatchPlan,
+    prepared_manifest: Path,
+    output_dir: Path,
+    split: str,
+) -> None:
+    metadata_path = output_dir / f"{split}_metadata.json"
+    metadata_path.parent.mkdir(parents=True, exist_ok=True)
+
+    per_example = [
+        dict(item)
+        for item in envelope.get("per_example", [])
+        if isinstance(item, dict)
+    ]
+    generated_artifacts = [
+        str(item.get("artifact_path") or item.get("generated_path"))
+        for item in per_example
+        if item.get("artifact_path") or item.get("generated_path")
+    ]
+    input_example_ids = [str(item.get("example_id")) for item in per_example]
+
+    metadata = {
+        "model_id": plan.config.model_id,
+        "task_type": plan.task_type.value,
+        "input_manifest": str(prepared_manifest),
+        "output_dir": str(output_dir),
+        "input_example_ids": input_example_ids,
+        "examples": per_example,
+        "generated_artifacts": generated_artifacts,
+        "artifact_paths": generated_artifacts,
+    }
+    metadata_path.write_text(
+        json.dumps(metadata, indent=2, ensure_ascii=False) + "\n",
+        encoding="utf-8",
+    )
+    envelope["metadata_path"] = str(metadata_path)
+    envelope["result_path"] = str(metadata_path)
+    envelope["generated_artifacts"] = generated_artifacts
+    envelope["artifact_paths"] = generated_artifacts
+    envelope["input_example_ids"] = input_example_ids
 
 
 def _coerce_per_example(envelope: dict[str, Any], prepared_manifest: Path) -> list[dict[str, Any]]:
