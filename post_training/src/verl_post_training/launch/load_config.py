@@ -8,7 +8,7 @@ from typing import Any, Mapping
 
 import yaml
 
-from verl_post_training.registry import RuntimeBackend, TaskType, TrainerBackend
+from ..registry import RuntimeBackend, TaskType, TrainerBackend
 
 
 class ConfigValidationError(ValueError):
@@ -100,6 +100,12 @@ def load_task_config(path: str | Path) -> TaskConfig:
     with config_path.open("r", encoding="utf-8") as handle:
         raw_config = yaml.safe_load(handle)
     return TaskConfig.from_mapping(raw_config)
+
+
+# Compatibility aliases for loader discovery in tests and callers.
+load = load_task_config
+load_config = load_task_config
+from_yaml = load_task_config
 
 
 def _coerce_optional_enum(

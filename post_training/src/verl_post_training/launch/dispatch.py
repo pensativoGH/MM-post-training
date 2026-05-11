@@ -4,8 +4,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from verl_post_training.launch.load_config import TaskConfig
-from verl_post_training.registry import (
+from .load_config import TaskConfig
+from ..registry import (
     ModelRegistryEntry,
     RuntimeBackend,
     TaskType,
