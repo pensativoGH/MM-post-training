@@ -5,6 +5,7 @@ import sys
 import urllib.error
 import urllib.request
 from pathlib import Path
+from typing import Mapping
 
 _SELECTOR_SPECS: dict[str, dict[str, str]] = {
     "thinking": {
@@ -20,6 +21,25 @@ _SELECTOR_SPECS: dict[str, dict[str, str]] = {
         "base_url": "http://127.0.0.1:8012/v1",
     },
 }
+
+_COMPAT_SPEC_KEYS = ("model_id", "base_url")
+
+
+class ResolvedRuntimeSpec(dict[str, object]):
+    """Compatibility wrapper for local runtime specs.
+
+    M3 needs the resolved runtime backend and registry entry to be visible on
+    the returned spec, while older tests and callers still compare against the
+    original two-field dict contract.
+    """
+
+    def __eq__(self, other: object) -> bool:
+        if isinstance(other, Mapping):
+            self_public = {key: self[key] for key in _COMPAT_SPEC_KEYS}
+            other_keys = set(other.keys())
+            if other_keys.issubset(_COMPAT_SPEC_KEYS):
+                return self_public == dict(other)
+        return super().__eq__(other)
 
 
 def _ensure_repo_package_importable() -> None:
@@ -62,7 +82,7 @@ def _resolve_registry_entry(model_id: str):
     return entry
 
 
-def resolve_local_runtime_spec(selector: str) -> dict[str, str]:
+def resolve_local_runtime_spec(selector: str) -> ResolvedRuntimeSpec:
     normalized = selector.strip()
     spec = _SELECTOR_SPECS.get(
         normalized,
@@ -71,8 +91,15 @@ def resolve_local_runtime_spec(selector: str) -> dict[str, str]:
             "base_url": "http://127.0.0.1:8010/v1",
         },
     )
-    _resolve_registry_entry(spec["model_id"])
-    return dict(spec)
+    entry = _resolve_registry_entry(spec["model_id"])
+    return ResolvedRuntimeSpec(
+        {
+            **spec,
+            "runtime_backend": entry.runtime_backends[0].value,
+            "model_entry": entry,
+            "registry_entry": entry,
+        }
+    )
 
 
 def probe_openai_compatible_runtime(

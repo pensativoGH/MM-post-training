@@ -4,6 +4,17 @@ set -euo pipefail
 source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/runtime_common.sh"
 
 MODEL_SELECTOR="${1:-thinking}"
+python3 - <<'PY' "$MODEL_SELECTOR"
+from pathlib import Path
+import sys
+
+project_root = Path.cwd()
+sys.path.insert(0, str(project_root / "runtime" / "src"))
+
+from verl_post_training_runtime.local_runtime import resolve_local_runtime_spec
+
+resolve_local_runtime_spec(sys.argv[1])
+PY
 MODEL_PATH="$(resolve_model_path "$MODEL_SELECTOR")"
 MODEL_ID="$(resolve_model_id "$MODEL_SELECTOR")"
 PORT="${PORT:-$(default_port_for "$MODEL_SELECTOR")}"
