@@ -91,11 +91,12 @@ def resolve_local_runtime_spec(selector: str) -> ResolvedRuntimeSpec:
             "base_url": "http://127.0.0.1:8010/v1",
         },
     )
+    _, runtime_backend, _ = _load_registry_types()
     entry = _resolve_registry_entry(spec["model_id"])
     return ResolvedRuntimeSpec(
         {
             **spec,
-            "runtime_backend": entry.runtime_backends[0].value,
+            "runtime_backend": runtime_backend.OPENAI_CHAT_VLLM.value,
             "model_entry": entry,
             "registry_entry": entry,
         }
