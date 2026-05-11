@@ -634,3 +634,15 @@ Milestone M9 remains blocked on human review for these decisions:
 - whether Wan2.2 training support should be added beyond inference
 - whether the `third_party/` bootstrap should remain script-based or move to
   submodules or vendored snapshots
+
+## 8. Design Phase Coverage
+
+This milestone sequence maps to the approved design phases as follows:
+
+- Phase 1A is covered by M1 through M5
+- Phase 1B is covered by M6 and M6B together; M6 lands V-JEPA2 inference and
+  M6B lands the V-JEPA2 trainer adapter plus repo-level
+  `masked_video_prediction` dispatch
+- Phase 1C is covered by M7
+- Phase 1D is covered by M8, with M9 holding the human approval gate for any
+  environment-heavy follow-on decisions
