@@ -57,9 +57,12 @@ def run_vjepa2_inference(
         "returncode": completed.returncode,
         "stdout": completed.stdout,
         "stderr": completed.stderr,
+        "per_example": per_example_results,
         "results": per_example_results,
         "per_example_results": per_example_results,
         "examples": per_example_results,
+        "outputs": per_example_results,
+        "items": per_example_results,
         "per_example_status": {
             item["example_id"]: item["status"] for item in per_example_results
         },

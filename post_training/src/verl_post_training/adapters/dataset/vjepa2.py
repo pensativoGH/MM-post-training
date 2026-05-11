@@ -81,21 +81,50 @@ def _extract_video_refs(row: dict[str, Any]) -> list[str]:
         row.get("video_path"),
         row.get("video"),
         row.get("media_path"),
+        row.get("path"),
+        row.get("uri"),
+        row.get("url"),
     )
     for value in direct_fields:
         if isinstance(value, str) and value.strip():
             return [value]
 
-    media_paths = row.get("video_paths")
-    if isinstance(media_paths, list):
-        refs = [str(path).strip() for path in media_paths if str(path).strip()]
+    for list_key in ("video_paths", "videos", "media_paths"):
+        refs = _extract_string_refs(row.get(list_key))
         if refs:
             return refs
 
-    generic_media_paths = row.get("media_paths")
-    if isinstance(generic_media_paths, list):
-        refs = [str(path).strip() for path in generic_media_paths if str(path).strip()]
+    for list_key in ("media", "assets", "inputs"):
+        refs = _extract_mapping_refs(row.get(list_key))
         if refs:
             return refs
 
     raise ValueError("Could not resolve a video reference for V-JEPA2 input row.")
+
+
+def _extract_string_refs(value: Any) -> list[str]:
+    if not isinstance(value, list):
+        return []
+    return [str(path).strip() for path in value if str(path).strip()]
+
+
+def _extract_mapping_refs(value: Any) -> list[str]:
+    if not isinstance(value, list):
+        return []
+
+    refs: list[str] = []
+    for item in value:
+        if isinstance(item, str) and item.strip():
+            refs.append(item)
+            continue
+        if not isinstance(item, dict):
+            continue
+        modality = str(item.get("modality") or item.get("type") or "").lower()
+        if modality and "video" not in modality:
+            continue
+        for key in ("video_path", "path", "uri", "url"):
+            ref = item.get(key)
+            if isinstance(ref, str) and ref.strip():
+                refs.append(ref)
+                break
+    return refs

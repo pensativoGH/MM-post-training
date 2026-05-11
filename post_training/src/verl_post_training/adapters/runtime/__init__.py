@@ -57,7 +57,11 @@ def resolve_runtime_adapter(
     plan = config if isinstance(config, DispatchPlan) else resolve_dispatch(config)
     if plan.runtime_backend is None:
         raise DispatchCompatibilityError("Dispatch plan does not define a runtime_backend.")
-    return get_runtime_adapter(plan.runtime_backend.value)
+    adapter = get_runtime_adapter(plan.runtime_backend.value)
+    validate = getattr(adapter, "validate", None)
+    if callable(validate):
+        validate(plan)
+    return adapter
 
 
 def run_runtime(

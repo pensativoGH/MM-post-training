@@ -61,9 +61,17 @@ class EncoderRuntimeAdapter:
                 "Encoder runtime adapter only supports video_encoder model entries."
             )
 
+    def invoke(self, config: TaskConfig | DispatchPlan, **kwargs: Any) -> dict[str, Any]:
+        return self.run(config, **kwargs)
+
+    def execute(self, config: TaskConfig | DispatchPlan, **kwargs: Any) -> dict[str, Any]:
+        return self.run(config, **kwargs)
+
+    def __call__(self, config: TaskConfig | DispatchPlan, **kwargs: Any) -> dict[str, Any]:
+        return self.run(config, **kwargs)
+
 
 def _coerce_dispatch_plan(config: TaskConfig | DispatchPlan) -> DispatchPlan:
     if isinstance(config, DispatchPlan):
         return config
     return resolve_dispatch(config)
-

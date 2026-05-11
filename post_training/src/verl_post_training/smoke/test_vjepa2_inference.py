@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import Any
 
 from ..adapters.runtime import run_runtime
+from ..bootstrap.third_party import discover_upstream_root
 from ..launch.load_config import TaskConfig
 
 
@@ -19,6 +20,7 @@ def run_vjepa2_smoke(
 ) -> dict[str, object]:
     """Execute the repo-owned smoke path without shelling into third_party/."""
 
+    discover_upstream_root("vjepa2")
     return run_runtime(
         config,
         pipeline_manifest=pipeline_manifest,
