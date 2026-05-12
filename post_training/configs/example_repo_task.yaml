@@ -1,0 +1,15 @@
+task_type: chat_rl
+model_id: qwen3-vl-4b-instruct
+trainer_backend: verl
+dataset_adapter: chat_rl
+input_manifest: data/pipeline/train_manifest.jsonl
+output_dir: outputs/post_training/example_run
+launcher:
+  kind: torchrun
+  num_nodes: 1
+  nproc_per_node: 1
+resources:
+  precision: bf16
+  devices: 1
+backend_config:
+  config_file: RL/configs/local_grpo_vllm.yaml
