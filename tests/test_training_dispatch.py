@@ -223,7 +223,7 @@ def test_run_local_grpo_help_preserves_user_contract(tmp_path):
     """
 
     env = os.environ.copy()
-    pkg_src = REPO_ROOT / "post_training" / "src"
+    pkg_src = REPO_ROOT / "world-model-post-training" / "shared" / "src"
     env["PYTHONPATH"] = (
         f"{pkg_src}{os.pathsep}{env['PYTHONPATH']}"
         if "PYTHONPATH" in env

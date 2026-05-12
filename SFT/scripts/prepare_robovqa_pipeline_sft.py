@@ -10,9 +10,16 @@ from pathlib import Path
 from typing import Any
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
-POST_TRAINING_SRC = REPO_ROOT / "post_training" / "src"
-if str(POST_TRAINING_SRC) not in sys.path:
-    sys.path.insert(0, str(POST_TRAINING_SRC))
+POST_TRAINING_ROOT = REPO_ROOT / "world-model-post-training"
+POST_TRAINING_SRCS = [
+    POST_TRAINING_ROOT / "shared" / "src",
+    POST_TRAINING_ROOT / "vjepa" / "src",
+    POST_TRAINING_ROOT / "wan" / "src",
+    POST_TRAINING_ROOT / "dreamdojo" / "src",
+]
+for src in reversed(POST_TRAINING_SRCS):
+    if src.is_dir() and str(src) not in sys.path:
+        sys.path.insert(0, str(src))
 
 from verl_post_training.adapters.dataset import get_dataset_adapter
 

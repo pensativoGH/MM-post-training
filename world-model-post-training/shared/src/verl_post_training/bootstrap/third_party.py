@@ -48,12 +48,12 @@ _install_path_write_text_parent_compat()
 
 def _repo_root() -> Path:
     for parent in Path(__file__).resolve().parents:
-        if (parent / "post_training" / "configs" / "third_party" / "manifest.yaml").is_file():
+        if (parent / "world-model-post-training" / "configs" / "third_party" / "manifest.yaml").is_file():
             return parent
     return Path(__file__).resolve().parents[5]
 
 
-MANIFEST_PATH = _repo_root() / "post_training" / "configs" / "third_party" / "manifest.yaml"
+MANIFEST_PATH = _repo_root() / "world-model-post-training" / "configs" / "third_party" / "manifest.yaml"
 
 
 @dataclass(frozen=True)
@@ -261,7 +261,7 @@ def _load_raw_manifest(manifest_path: Path) -> dict[str, dict[str, object]]:
 def _manifest_repo_root(manifest_path: Path) -> Path:
     resolved_manifest_path = manifest_path.resolve()
     manifest_parts = resolved_manifest_path.parts
-    repo_manifest_suffix = ("post_training", "configs", "third_party", "manifest.yaml")
+    repo_manifest_suffix = ("world-model-post-training", "configs", "third_party", "manifest.yaml")
     if manifest_parts[-len(repo_manifest_suffix) :] == repo_manifest_suffix:
         return resolved_manifest_path.parents[3]
     return resolved_manifest_path.parent

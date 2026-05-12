@@ -11,7 +11,7 @@ the approved plan):
     backend config file or argument list
 
     a smoke or dry-run path implemented in
-    ``post_training/src/verl_post_training/smoke/test_vjepa2_training.py``
+    ``world-model-post-training/shared/src/verl_post_training/smoke/test_vjepa2_training.py``
     proves that training can be launched from a repo-level config without
     manual ``cd`` into ``third_party/vjepa2``
 
@@ -23,7 +23,7 @@ Concretely, these tests pin:
   ``trainer_backend``, dataset manifest path, upstream root, and either a
   ``backend_config_file`` path or an ``argument_list`` / ``argv``
 * the smoke file at the plan-pinned path exists and lives under
-  ``post_training/src/`` (not under ``third_party/``)
+  ``world-model-post-training/shared/src/`` (not under ``third_party/``)
 * the smoke file does not embed a literal ``third_party/vjepa2`` path and
   does not ``os.chdir`` into the upstream tree
 * the smoke uses the M5 discovery helper to resolve the upstream root and
@@ -54,7 +54,7 @@ import yaml
 _REPO_ROOT = Path(__file__).resolve().parent.parent
 _SMOKE_PATH = (
     _REPO_ROOT
-    / "post_training"
+    / "world-model-post-training"
     / "vjepa"
     / "src"
     / "verl_post_training_vjepa"
@@ -587,8 +587,8 @@ def test_training_smoke_file_exists_at_pinned_path():
 
 def test_training_smoke_lives_under_repo_owned_package():
     smoke_rel = _SMOKE_PATH.relative_to(_REPO_ROOT)
-    assert smoke_rel.parts[0] == "post_training", (
-        f"smoke file must live under post_training/, not {smoke_rel.parts[0]!r}"
+    assert smoke_rel.parts[0] == "world-model-post-training", (
+        f"smoke file must live under world-model-post-training/, not {smoke_rel.parts[0]!r}"
     )
     assert "third_party" not in smoke_rel.parts, (
         "smoke file must not live inside third_party/; M6B forbids repo "
@@ -652,7 +652,7 @@ def test_training_smoke_is_importable_from_foreign_cwd(tmp_path, monkeypatch):
     contract is violated.
     """
 
-    src_root = _REPO_ROOT / "post_training" / "src"
+    src_root = _REPO_ROOT / "world-model-post-training" / "shared" / "src"
     if src_root.is_dir():
         src_str = str(src_root)
         if src_str not in sys.path:
@@ -686,7 +686,7 @@ def test_training_smoke_exposes_callable_entry_point(tmp_path, monkeypatch):
     from CI / a Make target / ``python -m`` without manual cd.
     """
 
-    src_root = _REPO_ROOT / "post_training" / "src"
+    src_root = _REPO_ROOT / "world-model-post-training" / "shared" / "src"
     if src_root.is_dir():
         src_str = str(src_root)
         if src_str not in sys.path:
@@ -729,7 +729,7 @@ def test_training_smoke_resolves_upstream_root_via_discovery(
     return a usable upstream root for the vjepa2 family.
     """
 
-    src_root = _REPO_ROOT / "post_training" / "src"
+    src_root = _REPO_ROOT / "world-model-post-training" / "shared" / "src"
     if src_root.is_dir():
         src_str = str(src_root)
         if src_str not in sys.path:

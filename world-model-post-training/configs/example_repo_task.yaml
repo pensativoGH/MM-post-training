@@ -3,7 +3,7 @@ model_id: qwen3-vl-4b-instruct
 trainer_backend: verl
 dataset_adapter: chat_rl
 input_manifest: data/pipeline/train_manifest.jsonl
-output_dir: outputs/post_training/example_run
+output_dir: outputs/world-model-post-training/example_run
 launcher:
   kind: torchrun
   num_nodes: 1

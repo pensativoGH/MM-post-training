@@ -3,7 +3,7 @@
 These tests pin the structural half of milestone M5:
 
 - the YAML manifest exists at
-  ``post_training/configs/third_party/manifest.yaml``
+  ``world-model-post-training/configs/third_party/manifest.yaml``
 - it declares one top-level mapping per upstream family (``vjepa2``,
   ``wan22``, ``dreamdojo``)
 - every entry carries at minimum ``repo_dir``, ``remote_url``,
@@ -27,7 +27,7 @@ import yaml
 
 
 _REPO_ROOT = Path(__file__).resolve().parent.parent
-_MANIFEST_PATH = _REPO_ROOT / "post_training" / "configs" / "third_party" / "manifest.yaml"
+_MANIFEST_PATH = _REPO_ROOT / "world-model-post-training" / "configs" / "third_party" / "manifest.yaml"
 
 REQUIRED_FAMILIES = ("vjepa2", "wan22", "dreamdojo")
 REQUIRED_FIELDS = ("repo_dir", "remote_url", "pinned_revision", "bootstrap_kind")
@@ -246,5 +246,5 @@ def test_no_repo_owned_python_modules_inside_third_party():
     py_files = [path for path in tracked if path.endswith(".py")]
     assert not py_files, (
         "third_party/ must not contain repo-owned Python modules — wrapper "
-        f"code belongs under post_training/src/. Found: {py_files!r}"
+        f"code belongs under world-model-post-training/shared/src/. Found: {py_files!r}"
     )

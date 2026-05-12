@@ -43,11 +43,18 @@ class ResolvedRuntimeSpec(dict[str, object]):
 
 
 def _ensure_repo_package_importable() -> None:
-    package_src = Path(__file__).resolve().parents[3] / "post_training" / "src"
-    if package_src.is_dir():
-        src_str = str(package_src)
-        if src_str not in sys.path:
-            sys.path.insert(0, src_str)
+    package_root = Path(__file__).resolve().parents[3] / "world-model-post-training"
+    package_srcs = [
+        package_root / "shared" / "src",
+        package_root / "vjepa" / "src",
+        package_root / "wan" / "src",
+        package_root / "dreamdojo" / "src",
+    ]
+    for package_src in reversed(package_srcs):
+        if package_src.is_dir():
+            src_str = str(package_src)
+            if src_str not in sys.path:
+                sys.path.insert(0, src_str)
 
 
 def _load_registry_types():

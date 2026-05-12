@@ -12,7 +12,7 @@ the approved plan):
     paths
 
     a smoke run implemented in
-    ``post_training/src/verl_post_training/smoke/test_wan_generation.py``
+    ``world-model-post-training/shared/src/verl_post_training/smoke/test_wan_generation.py``
     completes without requiring the user to operate inside the upstream
     Wan2.2 repo
 
@@ -27,7 +27,7 @@ Concretely, these tests pin:
 * the runtime adapter does not spawn a backend subprocess as a side
   effect of producing the metadata (smoke / dry-run safety)
 * the smoke file at the plan-pinned path exists and lives under
-  ``post_training/src/`` (not under ``third_party/``)
+  ``world-model-post-training/shared/src/`` (not under ``third_party/``)
 * the smoke does not embed a literal ``third_party/wan22`` path and
   does not ``os.chdir`` into the upstream tree
 * the smoke uses the M5 discovery helper to resolve the Wan upstream
@@ -56,7 +56,7 @@ import yaml
 _REPO_ROOT = Path(__file__).resolve().parent.parent
 _SMOKE_PATH = (
     _REPO_ROOT
-    / "post_training"
+    / "world-model-post-training"
     / "wan"
     / "src"
     / "verl_post_training_wan"
@@ -603,8 +603,8 @@ def test_smoke_file_exists_at_pinned_path():
 
 def test_smoke_lives_under_repo_owned_package_not_third_party():
     smoke_rel = _SMOKE_PATH.relative_to(_REPO_ROOT)
-    assert smoke_rel.parts[0] == "post_training", (
-        f"smoke file must live under post_training/, not {smoke_rel.parts[0]!r}"
+    assert smoke_rel.parts[0] == "world-model-post-training", (
+        f"smoke file must live under world-model-post-training/, not {smoke_rel.parts[0]!r}"
     )
     assert "third_party" not in smoke_rel.parts, (
         "smoke file must not live inside third_party/; M7 forbids repo "
@@ -695,7 +695,7 @@ def test_smoke_uses_bootstrap_discovery_helper():
 
 
 def _ensure_package_on_sys_path():
-    src = _REPO_ROOT / "post_training" / "src"
+    src = _REPO_ROOT / "world-model-post-training" / "shared" / "src"
     if src.is_dir():
         src_str = str(src)
         if src_str not in sys.path:

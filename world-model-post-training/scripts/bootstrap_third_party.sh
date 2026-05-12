@@ -2,7 +2,7 @@
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
-POST_TRAINING_PYTHONPATH="${ROOT_DIR}/post_training/shared/src:${ROOT_DIR}/post_training/vjepa/src:${ROOT_DIR}/post_training/wan/src:${ROOT_DIR}/post_training/dreamdojo/src"
+POST_TRAINING_PYTHONPATH="${ROOT_DIR}/world-model-post-training/shared/src:${ROOT_DIR}/world-model-post-training/vjepa/src:${ROOT_DIR}/world-model-post-training/wan/src:${ROOT_DIR}/world-model-post-training/dreamdojo/src"
 export PYTHONPATH="${POST_TRAINING_PYTHONPATH}${PYTHONPATH:+:${PYTHONPATH}}"
 
 python - <<'PY'

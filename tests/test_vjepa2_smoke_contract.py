@@ -5,7 +5,7 @@ This file pins the fourth M6 acceptance criterion (quoted from the
 approved plan):
 
     a smoke run implemented in
-    ``post_training/src/verl_post_training/smoke/test_vjepa2_inference.py``
+    ``world-model-post-training/shared/src/verl_post_training/smoke/test_vjepa2_inference.py``
     completes without requiring the user to manually change into the
     upstream V-JEPA2 repo
 
@@ -42,7 +42,7 @@ import pytest
 _REPO_ROOT = Path(__file__).resolve().parent.parent
 _SMOKE_PATH = (
     _REPO_ROOT
-    / "post_training"
+    / "world-model-post-training"
     / "vjepa"
     / "src"
     / "verl_post_training_vjepa"
@@ -66,14 +66,14 @@ def test_smoke_file_exists_at_pinned_path():
 
 
 def test_smoke_lives_under_repo_owned_package_not_third_party():
-    """The smoke file must live under ``post_training/vjepa/`` — never under
+    """The smoke file must live under ``world-model-post-training/vjepa/`` — never under
     ``third_party/``. Repo-owned wrapper code is the whole point of the
     M6 contract.
     """
 
     smoke_rel = _SMOKE_PATH.relative_to(_REPO_ROOT)
-    assert smoke_rel.parts[0] == "post_training", (
-        f"smoke file must live under post_training/, not {smoke_rel.parts[0]!r}"
+    assert smoke_rel.parts[0] == "world-model-post-training", (
+        f"smoke file must live under world-model-post-training/, not {smoke_rel.parts[0]!r}"
     )
     assert "third_party" not in smoke_rel.parts, (
         "smoke file must not live inside third_party/; M6 forbids repo "
@@ -158,7 +158,7 @@ def test_smoke_source_is_parseable_python():
 
 
 def _ensure_package_on_sys_path():
-    src = _REPO_ROOT / "post_training" / "src"
+    src = _REPO_ROOT / "world-model-post-training" / "shared" / "src"
     if src.is_dir():
         src_str = str(src)
         if src_str not in sys.path:

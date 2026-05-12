@@ -65,7 +65,7 @@ def test_revision_status_reports_absent_pinned_and_mismatched(tmp_path: Path) ->
         text=True,
     ).stdout.strip()
 
-    manifest_path = tmp_path / "post_training" / "configs" / "third_party" / "manifest.yaml"
+    manifest_path = tmp_path / "world-model-post-training" / "configs" / "third_party" / "manifest.yaml"
     manifest_path.parent.mkdir(parents=True)
     manifest_path.write_text(
         yaml.safe_dump(
@@ -129,7 +129,7 @@ def test_revision_status_reports_absent_pinned_and_mismatched(tmp_path: Path) ->
 
 
 def test_wrappers_discover_upstream_roots_from_manifest(tmp_path: Path) -> None:
-    manifest_path = tmp_path / "post_training" / "configs" / "third_party" / "manifest.yaml"
+    manifest_path = tmp_path / "world-model-post-training" / "configs" / "third_party" / "manifest.yaml"
     manifest_path.parent.mkdir(parents=True)
     manifest_path.write_text(
         yaml.safe_dump(

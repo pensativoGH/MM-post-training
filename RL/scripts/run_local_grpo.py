@@ -9,7 +9,7 @@ from pathlib import Path
 
 import yaml
 
-_POST_TRAINING_ROOT = Path(__file__).resolve().parents[2] / "post_training"
+_POST_TRAINING_ROOT = Path(__file__).resolve().parents[2] / "world-model-post-training"
 _POST_TRAINING_SRCS = [
     _POST_TRAINING_ROOT / "shared" / "src",
     _POST_TRAINING_ROOT / "vjepa" / "src",

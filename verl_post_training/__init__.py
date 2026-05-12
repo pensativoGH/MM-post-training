@@ -6,7 +6,7 @@ import sys
 from pathlib import Path
 
 _REPO_ROOT = Path(__file__).resolve().parent.parent
-_POST_TRAINING_ROOT = _REPO_ROOT / "post_training"
+_POST_TRAINING_ROOT = _REPO_ROOT / "world-model-post-training"
 _SRC_ROOTS = [
     _POST_TRAINING_ROOT / "shared" / "src",
     _POST_TRAINING_ROOT / "vjepa" / "src",
