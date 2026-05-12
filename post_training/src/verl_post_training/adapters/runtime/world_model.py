@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import Any
 
 from ...dreamdojo_runtime import run_dreamdojo_rollout
+from ...capabilities import require_available
 from ...launch.dispatch import DispatchCompatibilityError, DispatchPlan, resolve_dispatch
 from ...launch.load_config import TaskConfig
 from ...registry import ModelFamily, RuntimeBackend, TaskType
@@ -30,6 +31,7 @@ class WorldModelRuntimeAdapter:
     ) -> dict[str, Any]:
         plan = _coerce_dispatch_plan(config)
         self.validate(plan)
+        require_available(RuntimeBackend.DREAMDOJO.value)
 
         dataset_adapter = get_dataset_adapter(plan.config.dataset_adapter)
         resolved_output_dir = Path(output_dir or plan.config.output_dir)

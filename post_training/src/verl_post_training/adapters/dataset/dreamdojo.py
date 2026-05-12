@@ -94,6 +94,11 @@ def _coerce_example_id(row: dict[str, Any], *, index: int) -> str:
 
 
 def _extract_observations(row: dict[str, Any]) -> list[dict[str, Any]]:
+    for key in ("observation_paths", "observation_uris", "state_paths"):
+        value = row.get(key)
+        if isinstance(value, list) and value:
+            return [_normalize_observation(str(item), index=i) for i, item in enumerate(value)]
+
     for key in ("observations", "states", "frames"):
         value = row.get(key)
         if isinstance(value, list) and value:
@@ -108,6 +113,11 @@ def _extract_observations(row: dict[str, Any]) -> list[dict[str, Any]]:
 
 
 def _extract_actions(row: dict[str, Any]) -> list[dict[str, Any]]:
+    for key in ("action_paths", "action_uris"):
+        value = row.get(key)
+        if isinstance(value, list):
+            return [_normalize_action(str(item), index=i) for i, item in enumerate(value)]
+
     value = row.get("actions")
     if isinstance(value, list):
         return [_normalize_action(item, index=i) for i, item in enumerate(value)]
@@ -132,6 +142,8 @@ def _normalize_observation(value: Any, *, index: int) -> dict[str, Any]:
 def _normalize_action(value: Any, *, index: int) -> dict[str, Any]:
     if isinstance(value, dict):
         item = dict(value)
+    elif isinstance(value, str):
+        item = {"path": value}
     else:
         item = {"value": value}
     item.setdefault("timestep", index)
