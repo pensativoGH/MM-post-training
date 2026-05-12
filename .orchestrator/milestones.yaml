@@ -1,0 +1,266 @@
+milestones:
+  - id: M1
+    title: Add repo-owned registry and core schemas
+    goal: >
+      Create the minimal repo-owned control plane that can describe current Qwen
+      chat workflows and future non-chat model families without changing
+      training behavior yet.
+    depends_on: []
+    touch_points:
+      - post_training/src/verl_post_training/registry/model_registry.py
+      - post_training/src/verl_post_training/registry/schemas.py
+      - post_training/README.md
+      - tests/
+    acceptance:
+      - 'Registry import returns at least the `vlm_chat`, `video_encoder`, `video_generator`, and `world_model` families.'
+      - 'At least one seeded Qwen chat entry exposes all required `ModelRegistryEntry` fields from the approved plan.'
+      - 'Placeholder or fixture entries for `video_encoder`, `video_generator`, and `world_model` satisfy the same required field contract.'
+      - 'Unknown `model_id` lookup fails explicitly instead of falling back to Qwen defaults.'
+      - 'Enum values for `model_family`, `task_type`, `trainer_backend`, and `runtime_backend` are importable from repo-owned schema modules.'
+    test_owner: claude
+    test_paths:
+      - tests/test_model_registry.py
+      - tests/test_registry_schema_enums.py
+      - tests/test_registry_lookup_errors.py
+
+  - id: M2
+    title: Add repo-level config loader and dispatch entry point
+    goal: >
+      Introduce validated repo-level task config loading and registry-backed
+      dispatch so launch behavior is selected from shared contracts instead of
+      script-local assumptions.
+    depends_on:
+      - M1
+    touch_points:
+      - post_training/src/verl_post_training/launch/load_config.py
+      - post_training/src/verl_post_training/launch/dispatch.py
+      - post_training/configs/
+      - post_training/scripts/run_task.py
+      - tests/
+    acceptance:
+      - 'Valid YAML with top-level dispatch fields loads into a validated in-memory config object.'
+      - 'Unknown enum values are rejected before backend code runs.'
+      - '`backend_config` is preserved as backend-specific passthrough data rather than promoted into top-level dispatch logic.'
+      - 'Unsupported model-family and backend combinations fail with an explicit compatibility error.'
+    test_owner: claude
+    test_paths:
+      - tests/test_config_schema_contract.py
+      - tests/test_dispatch_compatibility_errors.py
+      - tests/test_backend_config_passthrough.py
+
+  - id: M3
+    title: Route existing chat runtime through the control plane
+    goal: >
+      Prove backward compatibility by resolving the current local Qwen runtime
+      through the registry and dispatch layers instead of hard-coded Qwen-only
+      branches.
+    depends_on:
+      - M1
+      - M2
+    touch_points:
+      - runtime/src/verl_post_training_runtime/local_runtime.py
+      - runtime/src/verl_post_training_runtime/__init__.py
+      - runtime/scripts/start_qwen_vllm_server.sh
+      - runtime/scripts/check_qwen_vllm_ready.py
+      - post_training/src/verl_post_training/
+      - tests/
+    acceptance:
+      - 'The current Qwen selector or explicit Qwen model id resolves `openai_chat_vllm` through the registry.'
+      - 'The existing readiness check continues to succeed for a healthy Qwen `vLLM` server.'
+      - 'Non-chat families are rejected before server startup begins when sent through the chat runtime entry point.'
+      - 'Existing chat runtime behavior remains compatible for supported selectors, including base URL, health check, and multimodal smoke behavior.'
+    test_owner: claude
+    test_paths:
+      - tests/test_local_runtime_backcompat.py
+      - tests/test_runtime_registry_resolution.py
+      - tests/test_non_chat_runtime_rejection.py
+
+  - id: M4
+    title: Extract reusable dataset adapters for existing SFT and RL flows
+    goal: >
+      Move current pipeline-to-dataset conversion behind reusable adapters
+      before adding new model families.
+    depends_on:
+      - M1
+      - M2
+    touch_points:
+      - post_training/src/verl_post_training/adapters/dataset/base.py
+      - post_training/src/verl_post_training/adapters/dataset/chat_sft.py
+      - post_training/src/verl_post_training/adapters/dataset/chat_rl.py
+      - SFT/scripts/prepare_robovqa_pipeline_sft.py
+      - RL/scripts/prepare_rl_dataset.py
+      - RL/scripts/prepare_robovqa_pipeline_dataset.py
+      - SFT/data/dataset_info.json
+      - tests/
+    acceptance:
+      - 'The chat SFT adapter converts an existing pipeline manifest into backend-consumable output without mutating the source manifest.'
+      - 'The chat RL adapter converts an existing pipeline manifest into backend-consumable RL output without mutating the source manifest.'
+      - 'Existing RoboVQA and procedural smoke manifests still prepare successfully through the refactored entry points.'
+      - 'Adapter registry keys include `chat_sft`, `chat_rl`, `vjepa2`, `wan`, and `dreamdojo`.'
+    test_owner: claude
+    test_paths:
+      - tests/test_sft_pipeline_adapter.py
+      - tests/test_rl_pipeline_adapter.py
+      - tests/test_adapter_registry_keys.py
+
+  - id: M5
+    title: Add pinned third_party bootstrap and discovery metadata
+    goal: >
+      Create the external dependency boundary before integrating new upstream
+      model families by pinning revisions and centralizing wrapper discovery.
+    depends_on:
+      - M2
+    touch_points:
+      - post_training/src/verl_post_training/bootstrap/third_party.py
+      - post_training/scripts/bootstrap_third_party.sh
+      - post_training/configs/third_party/manifest.yaml
+      - tests/
+    acceptance:
+      - 'The repo defines `post_training/configs/third_party/manifest.yaml` with entries for `vjepa2`, `wan22`, and `dreamdojo`.'
+      - 'Each manifest entry declares at least `repo_dir`, `remote_url`, `pinned_revision`, and `bootstrap_kind`.'
+      - 'Bootstrap status reports whether an upstream checkout is absent, pinned, or mismatched.'
+      - 'Wrapper code discovers upstream roots from manifest data rather than hard-coded paths in user-facing scripts.'
+      - 'Repo-specific business logic stays outside `third_party/`.'
+    test_owner: claude
+    test_paths:
+      - tests/test_third_party_manifest.py
+      - tests/test_third_party_revision_status.py
+      - tests/test_wrapper_discovery.py
+
+  - id: M6
+    title: Add V-JEPA2 inference integration
+    goal: >
+      Land the first non-chat family through the repo-owned dataset and runtime
+      contracts with a smoke-testable inference path.
+    depends_on:
+      - M4
+      - M5
+    touch_points:
+      - post_training/src/verl_post_training/adapters/dataset/vjepa2.py
+      - post_training/src/verl_post_training/adapters/runtime/encoder.py
+      - post_training/src/verl_post_training/
+      - post_training/src/verl_post_training/smoke/test_vjepa2_inference.py
+      - tests/
+    acceptance:
+      - 'The V-JEPA2 adapter writes backend-ready video inputs without duplicating media when references are sufficient.'
+      - 'A repo-level config with `task_type=embedding_inference` and a V-JEPA2 model id dispatches to the encoder runtime adapter.'
+      - 'The wrapper returns normalized output including `model_id`, `task_type`, `output_dir`, and per-example status.'
+      - 'The smoke path runs from the repo without requiring manual `cd` into `third_party/vjepa2`.'
+    test_owner: claude
+    test_paths:
+      - tests/test_vjepa2_adapter.py
+      - tests/test_vjepa2_dispatch.py
+      - tests/test_vjepa2_smoke_contract.py
+
+  - id: M6B
+    title: Add V-JEPA2 training dispatch
+    goal: >
+      Complete approved Phase 1B by making masked-video-prediction training
+      launch from repo-level config and produce a machine-readable launch record.
+    depends_on:
+      - M1
+      - M2
+      - M4
+      - M5
+      - M6
+    touch_points:
+      - post_training/src/verl_post_training/adapters/trainer/vjepa2.py
+      - post_training/src/verl_post_training/launch/dispatch.py
+      - post_training/src/verl_post_training/smoke/test_vjepa2_training.py
+      - post_training/src/verl_post_training/
+      - tests/
+    acceptance:
+      - 'A repo-level config with `task_type=masked_video_prediction`, `trainer_backend=vjepa2_native`, and a compatible V-JEPA2 model id dispatches to the V-JEPA2 trainer adapter.'
+      - 'Incompatible combinations fail before backend launch.'
+      - 'The trainer adapter writes a launch record under `output_dir` containing the resolved model, task, backend, dataset path, upstream root, and final backend config or argument list.'
+      - 'The smoke or dry-run path proves training can be launched from repo-level config without manual `cd` into `third_party/vjepa2`.'
+    test_owner: claude
+    test_paths:
+      - tests/test_vjepa2_trainer_dispatch.py
+      - tests/test_vjepa2_training_capability_errors.py
+      - tests/test_vjepa2_launch_record.py
+
+  - id: M7
+    title: Add Wan2.2 inference integration
+    goal: >
+      Add the first generation-oriented family while keeping the control-plane
+      contract non-chat-specific.
+    depends_on:
+      - M4
+      - M5
+    touch_points:
+      - post_training/src/verl_post_training/adapters/dataset/wan.py
+      - post_training/src/verl_post_training/adapters/runtime/video_generation.py
+      - post_training/src/verl_post_training/
+      - post_training/src/verl_post_training/smoke/test_wan_generation.py
+      - tests/
+    acceptance:
+      - 'The Wan adapter writes backend-ready conditioning manifests for supported pipeline inputs.'
+      - 'A repo-level config with `task_type=generation_inference` and a Wan model id dispatches to the video-generation runtime adapter.'
+      - 'The wrapper writes generated artifacts plus machine-readable metadata under `output_dir`.'
+      - 'The smoke path runs from the repo without requiring the user to operate inside the upstream Wan2.2 checkout.'
+    test_owner: claude
+    test_paths:
+      - tests/test_wan_adapter.py
+      - tests/test_wan_dispatch.py
+      - tests/test_wan_artifact_contract.py
+
+  - id: M8
+    title: Add DreamDojo integration and explicit chat trainer dispatch
+    goal: >
+      Integrate DreamDojo through the same repo-owned boundaries, then extend
+      SFT and RL launchers to dispatch existing chat training through the
+      control plane with explicit capability reporting.
+    depends_on:
+      - M3
+      - M4
+      - M5
+    human_scope: >
+      Runnable DreamDojo support is environment-dependent. If the local-first
+      contract cannot support execution, land the adapter, dispatch, and
+      capability-reporting work here and defer runnable DreamDojo smoke coverage
+      to M9.
+    touch_points:
+      - post_training/src/verl_post_training/adapters/dataset/dreamdojo.py
+      - post_training/src/verl_post_training/adapters/runtime/world_model.py
+      - post_training/src/verl_post_training/adapters/trainer/base.py
+      - post_training/src/verl_post_training/adapters/trainer/llamafactory.py
+      - post_training/src/verl_post_training/adapters/trainer/verl.py
+      - post_training/src/verl_post_training/adapters/trainer/dreamdojo.py
+      - post_training/src/verl_post_training/smoke/test_dreamdojo_rollout.py
+      - SFT/scripts/run_local_sft.sh
+      - RL/scripts/run_local_grpo.py
+      - tests/
+    acceptance:
+      - 'The DreamDojo adapter writes backend-ready trajectory or world-model inputs without mutating source records.'
+      - 'A repo-level config with a DreamDojo model id dispatches to a normalized world-model runtime adapter rather than a chat runtime path.'
+      - '`SFT/scripts/run_local_sft.sh` resolves supported Qwen chat SFT workflows through the LLaMA-Factory trainer adapter without changing required user inputs.'
+      - '`RL/scripts/run_local_grpo.py` resolves supported Qwen chat RL workflows through the VERL trainer adapter without changing required user inputs.'
+      - 'Unsupported training combinations fail before launch with a capability error naming the requested model family, task type, and backend.'
+      - 'If DreamDojo execution is deferred, capability reporting marks it unavailable instead of attempting a best-effort launch.'
+    test_owner: claude
+    test_paths:
+      - tests/test_dreamdojo_adapter.py
+      - tests/test_dreamdojo_runtime_dispatch.py
+      - tests/test_training_dispatch.py
+      - tests/test_llamafactory_trainer_dispatch.py
+      - tests/test_verl_trainer_dispatch.py
+      - tests/test_capability_error_messages.py
+
+  - id: M9
+    title: Human approval gate for environment-heavy scope
+    goal: >
+      Hold environment and support decisions that should not be auto-approved by
+      implementation alone.
+    depends_on:
+      - M6B
+      - M7
+      - M8
+    requires_human: true
+    touch_points:
+      - docs/
+      - .orchestrator/
+    acceptance:
+      - 'A human reviewer records a decision for DreamDojo runnable support in a repo-tracked document or issue reference.'
+      - 'A human reviewer records a decision for Wan2.2 training scope in a repo-tracked document or issue reference.'
+      - 'A human reviewer records a decision for the long-term `third_party/` maintenance strategy in a repo-tracked document or issue reference.'
