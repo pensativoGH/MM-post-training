@@ -34,6 +34,7 @@ def resolve_dispatch(config: TaskConfig) -> DispatchPlan:
     """Validate config compatibility against the model registry."""
 
     model_entry = get_model_entry(config.model_id)
+    _ensure_backend_task_role(config)
     if config.task_type not in model_entry.supported_task_types:
         raise DispatchCompatibilityError(
             "Unsupported task/backend combination: "
@@ -73,6 +74,42 @@ def dispatch_config(config: TaskConfig) -> DispatchPlan:
     return resolve_dispatch(config)
 
 
+def get_trainer_adapter(config: TaskConfig | DispatchPlan):
+    """Compatibility selector for callers that resolve trainer adapters via launch."""
+
+    plan = config if isinstance(config, DispatchPlan) else resolve_dispatch(config)
+    if plan.trainer_backend != TrainerBackend.VJEPA2_NATIVE:
+        return None
+
+    from ..adapters.trainer import resolve_trainer_adapter
+
+    return resolve_trainer_adapter(plan)
+
+
+def select_trainer_adapter(config: TaskConfig | DispatchPlan):
+    """Compatibility alias for trainer adapter selection."""
+
+    return get_trainer_adapter(config)
+
+
+def resolve_trainer_adapter(config: TaskConfig | DispatchPlan):
+    """Compatibility alias for trainer adapter selection."""
+
+    return get_trainer_adapter(config)
+
+
+def trainer_adapter_for_plan(config: TaskConfig | DispatchPlan):
+    """Compatibility alias for trainer adapter selection."""
+
+    return get_trainer_adapter(config)
+
+
+def build_trainer_adapter(config: TaskConfig | DispatchPlan):
+    """Compatibility alias for trainer adapter selection."""
+
+    return get_trainer_adapter(config)
+
+
 def get_runtime_adapter(config: TaskConfig | DispatchPlan):
     """Compatibility selector for callers that resolve runtime adapters via launch."""
 
@@ -97,6 +134,27 @@ def build_runtime_adapter(config: TaskConfig | DispatchPlan):
     """Compatibility alias for runtime adapter selection."""
 
     return get_runtime_adapter(config)
+
+
+def _ensure_backend_task_role(config: TaskConfig) -> None:
+    if config.trainer_backend == TrainerBackend.VJEPA2_NATIVE:
+        if config.task_type != TaskType.MASKED_VIDEO_PREDICTION:
+            raise DispatchCompatibilityError(
+                "Unsupported task/backend combination: "
+                f"trainer_backend={TrainerBackend.VJEPA2_NATIVE.value} "
+                f"requires task_type={TaskType.MASKED_VIDEO_PREDICTION.value}; "
+                f"got task_type={config.task_type.value}."
+            )
+    if (
+        config.runtime_backend == RuntimeBackend.VJEPA2_NATIVE
+        and config.task_type == TaskType.MASKED_VIDEO_PREDICTION
+    ):
+        raise DispatchCompatibilityError(
+            "Unsupported task/backend combination: "
+            f"task_type={TaskType.MASKED_VIDEO_PREDICTION.value} must use "
+            f"trainer_backend={TrainerBackend.VJEPA2_NATIVE.value}, not "
+            f"runtime_backend={RuntimeBackend.VJEPA2_NATIVE.value}."
+        )
 
 
 def _ensure_supported_backend(

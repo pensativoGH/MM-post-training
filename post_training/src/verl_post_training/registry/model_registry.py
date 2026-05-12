@@ -92,7 +92,10 @@ def _build_registry() -> dict[str, ModelRegistryEntry]:
         ModelRegistryEntry(
             model_id="vjepa2-video-encoder-placeholder",
             model_family=ModelFamily.VIDEO_ENCODER,
-            supported_task_types=(TaskType.EMBEDDING_INFERENCE,),
+            supported_task_types=(
+                TaskType.EMBEDDING_INFERENCE,
+                TaskType.MASKED_VIDEO_PREDICTION,
+            ),
             trainer_backends=(TrainerBackend.VJEPA2_NATIVE,),
             runtime_backends=(RuntimeBackend.VJEPA2_NATIVE,),
             checkpoint_source="facebook/v-jepa-2",
@@ -107,7 +110,10 @@ def _build_registry() -> dict[str, ModelRegistryEntry]:
         ModelRegistryEntry(
             model_id="facebook/vjepa2-base",
             model_family=ModelFamily.VIDEO_ENCODER,
-            supported_task_types=(TaskType.EMBEDDING_INFERENCE,),
+            supported_task_types=(
+                TaskType.EMBEDDING_INFERENCE,
+                TaskType.MASKED_VIDEO_PREDICTION,
+            ),
             trainer_backends=(TrainerBackend.VJEPA2_NATIVE,),
             runtime_backends=(RuntimeBackend.VJEPA2_NATIVE,),
             checkpoint_source="facebook/vjepa2-base",
