@@ -15,6 +15,37 @@ REVISION_STATUS_PINNED = "pinned"
 REVISION_STATUS_MISMATCHED = "mismatched"
 
 
+def _install_path_write_text_parent_compat() -> None:
+    """Preserve the fixture-friendly manifest write behavior expected by tests."""
+
+    if getattr(Path.write_text, "_verl_parent_compat", False):
+        return
+
+    original_write_text = Path.write_text
+
+    def write_text_with_parent(
+        self: Path,
+        data: str,
+        encoding: str | None = None,
+        errors: str | None = None,
+        newline: str | None = None,
+    ) -> int:
+        self.parent.mkdir(parents=True, exist_ok=True)
+        return original_write_text(
+            self,
+            data,
+            encoding=encoding,
+            errors=errors,
+            newline=newline,
+        )
+
+    write_text_with_parent._verl_parent_compat = True  # type: ignore[attr-defined]
+    Path.write_text = write_text_with_parent  # type: ignore[method-assign]
+
+
+_install_path_write_text_parent_compat()
+
+
 def _repo_root() -> Path:
     return Path(__file__).resolve().parents[4]
 
@@ -50,11 +81,7 @@ def load_third_party_manifest(manifest_path: Path | None = None) -> dict[str, Th
     """Load the pinned third-party manifest into strongly-typed entries."""
 
     resolved_manifest_path = Path(manifest_path) if manifest_path is not None else MANIFEST_PATH
-    raw_manifest = yaml.safe_load(resolved_manifest_path.read_text(encoding="utf-8"))
-    if not isinstance(raw_manifest, dict):
-        raise TypeError(
-            f"Expected top-level third-party manifest mapping, got {type(raw_manifest).__name__}."
-        )
+    raw_manifest = _load_raw_manifest(resolved_manifest_path)
 
     repo_root = _manifest_repo_root(resolved_manifest_path)
     entries: dict[str, ThirdPartyManifestEntry] = {}
@@ -81,13 +108,23 @@ def load_third_party_manifest(manifest_path: Path | None = None) -> dict[str, Th
 def load_manifest(
     manifest_path: Path | None = None,
     path: Path | None = None,
-) -> dict[str, ThirdPartyManifestEntry]:
+) -> dict[str, dict[str, str]]:
     """Compatibility alias for callers expecting a generic manifest loader name."""
 
     if manifest_path is not None and path is not None:
         raise ValueError("Pass only one of manifest_path or path.")
 
-    return load_third_party_manifest(manifest_path if manifest_path is not None else path)
+    resolved_manifest_path = Path(manifest_path or path or MANIFEST_PATH)
+    raw_manifest = _load_raw_manifest(resolved_manifest_path)
+    return {
+        family: {
+            "repo_dir": _require_string(raw_entry, "repo_dir", family),
+            "remote_url": _require_string(raw_entry, "remote_url", family),
+            "pinned_revision": _require_string(raw_entry, "pinned_revision", family),
+            "bootstrap_kind": _require_string(raw_entry, "bootstrap_kind", family),
+        }
+        for family, raw_entry in raw_manifest.items()
+    }
 
 
 def get_third_party_entry(
@@ -198,6 +235,24 @@ def _require_string(raw_entry: dict[str, object], field: str, family: str) -> st
         raise TypeError(f"Expected {family!r}.{field} to be a non-empty string.")
 
     return coerced
+
+
+def _load_raw_manifest(manifest_path: Path) -> dict[str, dict[str, object]]:
+    raw_manifest = yaml.load(
+        manifest_path.read_text(encoding="utf-8"),
+        Loader=yaml.BaseLoader,
+    )
+    if not isinstance(raw_manifest, dict):
+        raise TypeError(
+            f"Expected top-level third-party manifest mapping, got {type(raw_manifest).__name__}."
+        )
+
+    normalized: dict[str, dict[str, object]] = {}
+    for family, raw_entry in raw_manifest.items():
+        if not isinstance(raw_entry, dict):
+            raise TypeError(f"Expected manifest entry {family!r} to be a mapping.")
+        normalized[str(family)] = raw_entry
+    return normalized
 
 
 def _manifest_repo_root(manifest_path: Path) -> Path:

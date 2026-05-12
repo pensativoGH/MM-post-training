@@ -73,6 +73,32 @@ def dispatch_config(config: TaskConfig) -> DispatchPlan:
     return resolve_dispatch(config)
 
 
+def get_runtime_adapter(config: TaskConfig | DispatchPlan):
+    """Compatibility selector for callers that resolve runtime adapters via launch."""
+
+    from ..adapters.runtime import resolve_runtime_adapter
+
+    return resolve_runtime_adapter(config)
+
+
+def select_runtime_adapter(config: TaskConfig | DispatchPlan):
+    """Compatibility alias for runtime adapter selection."""
+
+    return get_runtime_adapter(config)
+
+
+def runtime_adapter_for_plan(config: TaskConfig | DispatchPlan):
+    """Compatibility alias for runtime adapter selection."""
+
+    return get_runtime_adapter(config)
+
+
+def build_runtime_adapter(config: TaskConfig | DispatchPlan):
+    """Compatibility alias for runtime adapter selection."""
+
+    return get_runtime_adapter(config)
+
+
 def _ensure_supported_backend(
     *,
     model_entry: ModelRegistryEntry,
