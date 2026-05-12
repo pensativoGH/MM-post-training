@@ -42,6 +42,55 @@ print(f"Resolved trainer dispatch: {adapter.adapter_key} handles {plan.task_type
 PY
 }
 
+run_with_trainer_adapter() {
+  "$PYTHON_BIN" - "$CONFIG_PATH" "$OPENSEARCH_SFT_DIR" <<'PY'
+from pathlib import Path
+import os
+import shutil
+import subprocess
+import sys
+import yaml
+
+from verl_post_training.adapters.trainer.llamafactory import LlamaFactoryTrainerAdapter
+from verl_post_training.launch.load_config import TaskConfig
+
+config_path = Path(sys.argv[1])
+opensearch_sft_dir = Path(sys.argv[2])
+raw = yaml.safe_load(config_path.read_text(encoding="utf-8")) or {}
+model_id = str(raw.get("model_name_or_path") or "").strip()
+if not model_id:
+    raise SystemExit("SFT config must define model_name_or_path for trainer dispatch.")
+
+task_config = TaskConfig.from_mapping(
+    {
+        "task_type": "chat_sft",
+        "model_id": model_id,
+        "trainer_backend": "llamafactory",
+        "dataset_adapter": "chat_sft",
+        "input_manifest": str(config_path),
+        "output_dir": str(raw.get("output_dir") or "outputs/sft/local"),
+        "launcher": {"kind": "llamafactory-cli"},
+        "resources": {"precision": "bf16" if raw.get("bf16", False) else "fp32"},
+        "backend_config": {"config_file": str(config_path)},
+    }
+)
+record = LlamaFactoryTrainerAdapter().run(task_config, dry_run=False)
+argv = list(record["argv"])
+env = os.environ.copy()
+if shutil.which("llamafactory-cli"):
+    print("Using llamafactory-cli from PATH")
+elif (opensearch_sft_dir / "src" / "llamafactory").is_dir():
+    print(f"llamafactory-cli not found; falling back to vendored source at {opensearch_sft_dir}")
+    src = str(opensearch_sft_dir / "src")
+    env["PYTHONPATH"] = src if not env.get("PYTHONPATH") else f"{src}:{env['PYTHONPATH']}"
+else:
+    print(f"Could not find vendored LLaMA-Factory under {opensearch_sft_dir}", file=sys.stderr)
+    raise SystemExit(1)
+
+raise SystemExit(subprocess.call(argv, env=env))
+PY
+}
+
 extract_dataset_names() {
   "$PYTHON_BIN" - "$CONFIG_PATH" <<'PY'
 from pathlib import Path
@@ -84,28 +133,6 @@ run_validation() {
   done
 }
 
-run_with_local_install() {
-  llamafactory-cli train "$CONFIG_PATH"
-}
-
-run_with_vendored_copy() {
-  if [[ ! -d "$OPENSEARCH_SFT_DIR/src/llamafactory" ]]; then
-    echo "Could not find vendored LLaMA-Factory under $OPENSEARCH_SFT_DIR" >&2
-    return 1
-  fi
-
-  PYTHONPATH="$OPENSEARCH_SFT_DIR/src${PYTHONPATH:+:$PYTHONPATH}" \
-    "$PYTHON_BIN" -m llamafactory.cli train "$CONFIG_PATH"
-}
-
 resolve_trainer_dispatch
 run_validation
-
-if command -v llamafactory-cli >/dev/null 2>&1; then
-  echo "Using llamafactory-cli from PATH"
-  run_with_local_install
-  exit 0
-fi
-
-echo "llamafactory-cli not found; falling back to vendored source at $OPENSEARCH_SFT_DIR"
-run_with_vendored_copy
+run_with_trainer_adapter

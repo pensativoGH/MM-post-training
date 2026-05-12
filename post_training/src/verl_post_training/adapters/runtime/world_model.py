@@ -7,7 +7,7 @@ from pathlib import Path
 from typing import Any
 
 from ...dreamdojo_runtime import run_dreamdojo_rollout
-from ...capabilities import require_available
+from ...capabilities import report_capabilities
 from ...launch.dispatch import DispatchCompatibilityError, DispatchPlan, resolve_dispatch
 from ...launch.load_config import TaskConfig
 from ...registry import ModelFamily, RuntimeBackend, TaskType
@@ -31,7 +31,6 @@ class WorldModelRuntimeAdapter:
     ) -> dict[str, Any]:
         plan = _coerce_dispatch_plan(config)
         self.validate(plan)
-        require_available(RuntimeBackend.DREAMDOJO.value)
 
         dataset_adapter = get_dataset_adapter(plan.config.dataset_adapter)
         resolved_output_dir = Path(output_dir or plan.config.output_dir)
@@ -41,6 +40,21 @@ class WorldModelRuntimeAdapter:
             split=split,
             config=plan.backend_config,
         )
+        capability = dict(report_capabilities().get(RuntimeBackend.DREAMDOJO.value) or {})
+        if not capability.get("available", False):
+            envelope = _normalize_world_model_envelope(
+                plan=plan,
+                prepared_manifest=manifest_path,
+                output_dir=resolved_output_dir,
+                upstream_result={
+                    "status": "unavailable",
+                    "available": False,
+                    "capability": capability,
+                },
+            )
+            _write_capability_report(envelope=envelope, output_dir=resolved_output_dir)
+            return envelope
+
         upstream_result = run_dreamdojo_rollout(
             model_id=plan.config.model_id,
             task_type=plan.task_type.value,
