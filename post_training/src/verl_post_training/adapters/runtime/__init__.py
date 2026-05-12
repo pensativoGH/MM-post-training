@@ -8,12 +8,14 @@ from ...registry import RuntimeBackend
 from .base import RuntimeAdapter
 from .encoder import EncoderRuntimeAdapter
 from .video_generation import VideoGenerationRuntimeAdapter
+from .world_model import WorldModelRuntimeAdapter
 
 
 def _build_registry() -> dict[str, RuntimeAdapter]:
     adapters: tuple[RuntimeAdapter, ...] = (
         EncoderRuntimeAdapter(),
         VideoGenerationRuntimeAdapter(),
+        WorldModelRuntimeAdapter(),
     )
     return {adapter.adapter_key: adapter for adapter in adapters}
 
@@ -108,6 +110,7 @@ __all__ = [
     "RUNTIME_ADAPTER_KEYS",
     "RuntimeAdapter",
     "VideoGenerationRuntimeAdapter",
+    "WorldModelRuntimeAdapter",
     "dispatch_runtime",
     "get_adapter",
     "get_runtime_adapter",
