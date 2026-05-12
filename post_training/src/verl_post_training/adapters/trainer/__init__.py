@@ -6,11 +6,19 @@ from ...launch.dispatch import DispatchCompatibilityError, DispatchPlan, resolve
 from ...launch.load_config import TaskConfig
 from ...registry import TrainerBackend
 from .base import TrainerAdapter
+from .dreamdojo import DreamDojoTrainerAdapter
+from .llamafactory import LlamaFactoryTrainerAdapter
+from .verl import VERLTrainerAdapter
 from .vjepa2 import VJEPA2TrainerAdapter
 
 
 def _build_registry() -> dict[str, TrainerAdapter]:
-    adapters: tuple[TrainerAdapter, ...] = (VJEPA2TrainerAdapter(),)
+    adapters: tuple[TrainerAdapter, ...] = (
+        LlamaFactoryTrainerAdapter(),
+        VERLTrainerAdapter(),
+        VJEPA2TrainerAdapter(),
+        DreamDojoTrainerAdapter(),
+    )
     return {adapter.adapter_key: adapter for adapter in adapters}
 
 
@@ -87,7 +95,10 @@ __all__ = [
     "DispatchCompatibilityError",
     "REGISTRY",
     "TRAINER_ADAPTER_KEYS",
+    "DreamDojoTrainerAdapter",
+    "LlamaFactoryTrainerAdapter",
     "TrainerAdapter",
+    "VERLTrainerAdapter",
     "VJEPA2TrainerAdapter",
     "build_trainer_adapter",
     "dispatch_trainer",

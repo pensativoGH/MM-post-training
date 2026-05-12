@@ -5,6 +5,42 @@ ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 CONFIG_PATH="${1:-$ROOT_DIR/SFT/examples/local/qwen3_vl_video_sft_8b.yaml}"
 OPENSEARCH_SFT_DIR="${OPENSEARCH_SFT_DIR:-$ROOT_DIR/../OpenSearch-VL/SFT}"
 PYTHON_BIN="${PYTHON_BIN:-python3}"
+export PYTHONPATH="$ROOT_DIR/post_training/src${PYTHONPATH:+:$PYTHONPATH}"
+
+resolve_trainer_dispatch() {
+  "$PYTHON_BIN" - "$CONFIG_PATH" <<'PY'
+from pathlib import Path
+import sys
+import yaml
+
+from verl_post_training.adapters.trainer import resolve_trainer_adapter
+from verl_post_training.launch.dispatch import resolve_dispatch
+from verl_post_training.launch.load_config import TaskConfig
+
+config_path = Path(sys.argv[1])
+raw = yaml.safe_load(config_path.read_text(encoding="utf-8")) or {}
+model_id = str(raw.get("model_name_or_path") or "").strip()
+if not model_id:
+    raise SystemExit("SFT config must define model_name_or_path for trainer dispatch.")
+
+task_config = TaskConfig.from_mapping(
+    {
+        "task_type": "chat_sft",
+        "model_id": model_id,
+        "trainer_backend": "llamafactory",
+        "dataset_adapter": "chat_sft",
+        "input_manifest": str(config_path),
+        "output_dir": str(raw.get("output_dir") or "outputs/sft/local"),
+        "launcher": {"kind": "llamafactory-cli"},
+        "resources": {"precision": "bf16" if raw.get("bf16", False) else "fp32"},
+        "backend_config": {"config_file": str(config_path)},
+    }
+)
+plan = resolve_dispatch(task_config)
+adapter = resolve_trainer_adapter(plan)
+print(f"Resolved trainer dispatch: {adapter.adapter_key} handles {plan.task_type.value} for {plan.model_entry.model_family.value}")
+PY
+}
 
 extract_dataset_names() {
   "$PYTHON_BIN" - "$CONFIG_PATH" <<'PY'
@@ -62,6 +98,7 @@ run_with_vendored_copy() {
     "$PYTHON_BIN" -m llamafactory.cli train "$CONFIG_PATH"
 }
 
+resolve_trainer_dispatch
 run_validation
 
 if command -v llamafactory-cli >/dev/null 2>&1; then

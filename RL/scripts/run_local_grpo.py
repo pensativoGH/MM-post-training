@@ -9,6 +9,10 @@ from pathlib import Path
 
 import yaml
 
+_POST_TRAINING_SRC = Path(__file__).resolve().parents[2] / "post_training" / "src"
+if _POST_TRAINING_SRC.is_dir() and str(_POST_TRAINING_SRC) not in sys.path:
+    sys.path.insert(0, str(_POST_TRAINING_SRC))
+
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Run a local VERL GRPO smoke config.")
@@ -140,11 +144,42 @@ def build_overrides(config: dict, root_dir: Path) -> list[str]:
     return overrides
 
 
+def resolve_trainer_dispatch(config: dict, config_path: Path, root_dir: Path):
+    from verl_post_training.adapters.trainer import resolve_trainer_adapter
+    from verl_post_training.launch.dispatch import resolve_dispatch
+    from verl_post_training.launch.load_config import TaskConfig
+
+    model_id = str(config.get("model", {}).get("path") or "").strip()
+    if not model_id:
+        raise ValueError("RL config must define model.path for trainer dispatch.")
+
+    task_config = TaskConfig.from_mapping(
+        {
+            "task_type": "chat_rl",
+            "model_id": model_id,
+            "trainer_backend": "verl",
+            "dataset_adapter": "chat_rl",
+            "input_manifest": str(config_path),
+            "output_dir": str(root_dir / "outputs" / "rl" / "local_grpo"),
+            "launcher": {"kind": "python_module", "module": "verl.trainer.main_ppo"},
+            "resources": {"precision": "bf16", "devices": config.get("trainer", {}).get("n_gpus_per_node", 1)},
+            "backend_config": {"config_file": str(config_path)},
+        }
+    )
+    plan = resolve_dispatch(task_config)
+    return plan, resolve_trainer_adapter(plan)
+
+
 def main() -> int:
     args = parse_args()
     config_path = args.config.resolve()
     root_dir = config_path.parents[2]
     config = yaml.safe_load(config_path.read_text())
+    plan, adapter = resolve_trainer_dispatch(config, config_path=config_path, root_dir=root_dir)
+    print(
+        "Resolved trainer dispatch: "
+        f"{adapter.adapter_key} handles {plan.task_type.value} for {plan.model_entry.model_family.value}"
+    )
     overrides = build_overrides(config, root_dir=root_dir)
 
     cmd = [sys.executable, "-m", "verl.trainer.main_ppo", *overrides]
