@@ -1,0 +1,2 @@
+"""DreamDojo smoke entry points."""
+

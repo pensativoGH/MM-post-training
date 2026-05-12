@@ -5,7 +5,8 @@ ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 CONFIG_PATH="${1:-$ROOT_DIR/SFT/examples/local/qwen3_vl_video_sft_8b.yaml}"
 OPENSEARCH_SFT_DIR="${OPENSEARCH_SFT_DIR:-$ROOT_DIR/../OpenSearch-VL/SFT}"
 PYTHON_BIN="${PYTHON_BIN:-python3}"
-export PYTHONPATH="$ROOT_DIR/post_training/src${PYTHONPATH:+:$PYTHONPATH}"
+POST_TRAINING_PYTHONPATH="$ROOT_DIR/post_training/shared/src:$ROOT_DIR/post_training/vjepa/src:$ROOT_DIR/post_training/wan/src:$ROOT_DIR/post_training/dreamdojo/src"
+export PYTHONPATH="$POST_TRAINING_PYTHONPATH${PYTHONPATH:+:$PYTHONPATH}"
 
 resolve_trainer_dispatch() {
   "$PYTHON_BIN" - "$CONFIG_PATH" <<'PY'

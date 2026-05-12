@@ -9,9 +9,16 @@ from pathlib import Path
 
 import yaml
 
-_POST_TRAINING_SRC = Path(__file__).resolve().parents[2] / "post_training" / "src"
-if _POST_TRAINING_SRC.is_dir() and str(_POST_TRAINING_SRC) not in sys.path:
-    sys.path.insert(0, str(_POST_TRAINING_SRC))
+_POST_TRAINING_ROOT = Path(__file__).resolve().parents[2] / "post_training"
+_POST_TRAINING_SRCS = [
+    _POST_TRAINING_ROOT / "shared" / "src",
+    _POST_TRAINING_ROOT / "vjepa" / "src",
+    _POST_TRAINING_ROOT / "wan" / "src",
+    _POST_TRAINING_ROOT / "dreamdojo" / "src",
+]
+for _src in reversed(_POST_TRAINING_SRCS):
+    if _src.is_dir() and str(_src) not in sys.path:
+        sys.path.insert(0, str(_src))
 
 
 def parse_args() -> argparse.Namespace:
@@ -30,6 +37,7 @@ def q(value: object) -> str:
 
 
 def build_overrides(config: dict, root_dir: Path) -> list[str]:
+    algorithm = config.get("algorithm", {})
     trainer = config["trainer"]
     model = config["model"]
     rollout = config["rollout"]
@@ -59,13 +67,15 @@ def build_overrides(config: dict, root_dir: Path) -> list[str]:
         f"actor_rollout_ref.model.trust_remote_code={q(model.get('trust_remote_code', True))}",
         f"actor_rollout_ref.model.enable_gradient_checkpointing={q(model.get('enable_gradient_checkpointing', True))}",
         f"+actor_rollout_ref.model.override_config.attn_implementation={model.get('attn_implementation', 'sdpa')}",
-        "actor_rollout_ref.actor.use_kl_loss=false",
+        f"actor_rollout_ref.actor.use_kl_loss={q(algorithm.get('actor_kl_loss', {}).get('enabled', False))}",
         f"actor_rollout_ref.actor.freeze_vision_tower={q(model.get('freeze_vision_tower', False))}",
         f"actor_rollout_ref.actor.use_dynamic_bsz={q(trainer.get('use_dynamic_bsz', False))}",
         f"actor_rollout_ref.actor.ppo_mini_batch_size={trainer.get('ppo_mini_batch_size', 1)}",
         f"actor_rollout_ref.actor.ppo_micro_batch_size_per_gpu={trainer.get('ppo_micro_batch_size_per_gpu', 1)}",
         f"actor_rollout_ref.actor.ppo_max_token_len_per_gpu={trainer.get('ppo_max_token_len_per_gpu', data.get('max_prompt_length', rollout.get('max_prompt_length', 4096)))}",
         f"actor_rollout_ref.actor.optim.lr={trainer.get('lr', 1.0e-6)}",
+        f"actor_rollout_ref.actor.grad_clip={trainer.get('grad_clip', 1.0)}",
+        f"actor_rollout_ref.actor.ppo_epochs={trainer.get('ppo_epochs', 1)}",
         f"actor_rollout_ref.actor.use_torch_compile={q(trainer.get('use_torch_compile', False))}",
         "critic.enable=false",
         f"data.train_files={root_dir / (data.get('train_file') or data.get('train_path'))}",
@@ -97,6 +107,7 @@ def build_overrides(config: dict, root_dir: Path) -> list[str]:
         f"actor_rollout_ref.rollout.max_num_seqs={rollout.get('max_num_seqs', rollout.get('n_resp_per_prompt', 1))}",
         f"actor_rollout_ref.rollout.max_model_len={rollout.get('max_model_len', data.get('max_prompt_length', rollout.get('max_prompt_length', 4096)) + data.get('max_response_length', rollout.get('max_response_length', 8192)))}",
         f"actor_rollout_ref.rollout.log_prob_micro_batch_size_per_gpu={rollout.get('log_prob_micro_batch_size_per_gpu', 1)}",
+        f"actor_rollout_ref.rollout.calculate_log_probs={q(rollout.get('calculate_log_probs', False))}",
         f"actor_rollout_ref.rollout.enforce_eager={q(rollout.get('enforce_eager', True))}",
         f"actor_rollout_ref.rollout.free_cache_engine={q(rollout.get('free_cache_engine', True))}",
         f"actor_rollout_ref.rollout.load_format={rollout.get('load_format', 'hf')}",
@@ -111,6 +122,66 @@ def build_overrides(config: dict, root_dir: Path) -> list[str]:
         f"reward.num_workers={reward.get('num_workers', 1)}",
     ]
 
+    warmup_ratio = trainer.get("warmup_ratio")
+    if warmup_ratio is not None:
+        overrides.append(f"actor_rollout_ref.actor.optim.lr_warmup_steps_ratio={warmup_ratio}")
+
+    min_lr_ratio = trainer.get("min_lr_ratio")
+    if min_lr_ratio is not None:
+        overrides.append(f"actor_rollout_ref.actor.optim.min_lr_ratio={min_lr_ratio}")
+
+    num_cycles = trainer.get("num_cycles")
+    if num_cycles is not None:
+        overrides.append(f"actor_rollout_ref.actor.optim.num_cycles={num_cycles}")
+
+    warmup_style = trainer.get("warmup_style")
+    if warmup_style is not None:
+        overrides.append(f"actor_rollout_ref.actor.optim.warmup_style={warmup_style}")
+
+    actor_kl_loss = algorithm.get("actor_kl_loss", {})
+    if actor_kl_loss.get("coef") is not None:
+        overrides.append(f"actor_rollout_ref.actor.kl_loss_coef={actor_kl_loss['coef']}")
+    if actor_kl_loss.get("type"):
+        overrides.append(f"actor_rollout_ref.actor.kl_loss_type={actor_kl_loss['type']}")
+
+    if algorithm.get("use_kl_in_reward") is not None:
+        overrides.append(f"algorithm.use_kl_in_reward={q(algorithm['use_kl_in_reward'])}")
+    if algorithm.get("kl_penalty"):
+        overrides.append(f"algorithm.kl_penalty={algorithm['kl_penalty']}")
+
+    kl_ctrl = algorithm.get("kl_ctrl", {})
+    if kl_ctrl.get("type"):
+        overrides.append(f"algorithm.kl_ctrl.type={kl_ctrl['type']}")
+    if kl_ctrl.get("kl_coef") is not None:
+        overrides.append(f"algorithm.kl_ctrl.kl_coef={kl_ctrl['kl_coef']}")
+    if kl_ctrl.get("horizon") is not None:
+        overrides.append(f"algorithm.kl_ctrl.horizon={kl_ctrl['horizon']}")
+    if kl_ctrl.get("target_kl") is not None:
+        overrides.append(f"algorithm.kl_ctrl.target_kl={kl_ctrl['target_kl']}")
+
+    rollout_correction = algorithm.get("rollout_correction", {})
+    if rollout_correction.get("rollout_is") is not None:
+        overrides.append(f"algorithm.rollout_correction.rollout_is={rollout_correction['rollout_is']}")
+    if rollout_correction.get("rollout_is_threshold") is not None:
+        overrides.append(
+            f"algorithm.rollout_correction.rollout_is_threshold={q(rollout_correction['rollout_is_threshold'])}"
+        )
+    if rollout_correction.get("rollout_is_batch_normalize") is not None:
+        overrides.append(
+            "algorithm.rollout_correction.rollout_is_batch_normalize="
+            f"{q(rollout_correction['rollout_is_batch_normalize'])}"
+        )
+    if rollout_correction.get("rollout_rs") is not None:
+        overrides.append(f"algorithm.rollout_correction.rollout_rs={q(rollout_correction['rollout_rs'])}")
+    if rollout_correction.get("rollout_rs_threshold") is not None:
+        overrides.append(
+            f"algorithm.rollout_correction.rollout_rs_threshold={q(rollout_correction['rollout_rs_threshold'])}"
+        )
+    if rollout_correction.get("bypass_mode") is not None:
+        overrides.append(f"algorithm.rollout_correction.bypass_mode={q(rollout_correction['bypass_mode'])}")
+    if rollout_correction.get("loss_type") is not None:
+        overrides.append(f"algorithm.rollout_correction.loss_type={rollout_correction['loss_type']}")
+
     if lora_rank > 0:
         overrides.extend(
             [
@@ -119,6 +190,8 @@ def build_overrides(config: dict, root_dir: Path) -> list[str]:
                 f"actor_rollout_ref.model.target_modules={q(model.get('target_modules', 'all-linear'))}",
             ]
         )
+        if model.get("lora_dropout") is not None:
+            overrides.append(f"+actor_rollout_ref.model.lora.dropout={model['lora_dropout']}")
 
     num_cpus = ray.get("num_cpus")
     if num_cpus is not None:

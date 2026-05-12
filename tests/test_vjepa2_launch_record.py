@@ -55,10 +55,11 @@ _REPO_ROOT = Path(__file__).resolve().parent.parent
 _SMOKE_PATH = (
     _REPO_ROOT
     / "post_training"
+    / "vjepa"
     / "src"
-    / "verl_post_training"
+    / "verl_post_training_vjepa"
     / "smoke"
-    / "test_vjepa2_training.py"
+    / "test_training.py"
 )
 
 

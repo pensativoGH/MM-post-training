@@ -43,10 +43,11 @@ _REPO_ROOT = Path(__file__).resolve().parent.parent
 _SMOKE_PATH = (
     _REPO_ROOT
     / "post_training"
+    / "vjepa"
     / "src"
-    / "verl_post_training"
+    / "verl_post_training_vjepa"
     / "smoke"
-    / "test_vjepa2_inference.py"
+    / "test_inference.py"
 )
 
 
@@ -65,7 +66,7 @@ def test_smoke_file_exists_at_pinned_path():
 
 
 def test_smoke_lives_under_repo_owned_package_not_third_party():
-    """The smoke file must live under ``post_training/src/`` — never under
+    """The smoke file must live under ``post_training/vjepa/`` — never under
     ``third_party/``. Repo-owned wrapper code is the whole point of the
     M6 contract.
     """
