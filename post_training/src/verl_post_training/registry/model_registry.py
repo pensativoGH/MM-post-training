@@ -18,6 +18,60 @@ class ModelNotFoundError(LookupError):
 def _build_registry() -> dict[str, ModelRegistryEntry]:
     entries = (
         ModelRegistryEntry(
+            model_id="Qwen/Qwen3-VL-8B-Thinking",
+            model_family=ModelFamily.VLM_CHAT,
+            supported_task_types=(TaskType.CHAT_SFT, TaskType.CHAT_RL),
+            trainer_backends=(
+                TrainerBackend.LLAMAFACTORY,
+                TrainerBackend.VERL,
+            ),
+            runtime_backends=(RuntimeBackend.OPENAI_CHAT_VLLM,),
+            checkpoint_source="Qwen/Qwen3-VL-8B-Thinking",
+            checkpoint_format="huggingface",
+            required_modalities=("image", "text", "video"),
+            dataset_adapter_keys=("chat_sft", "chat_rl"),
+            launcher_type="python_module",
+            default_precision="bf16",
+            distributed_requirements={"min_gpus": 1},
+            environment_tags=("local", "gpu", "qwen"),
+        ),
+        ModelRegistryEntry(
+            model_id="Qwen/Qwen3-VL-8B-Instruct",
+            model_family=ModelFamily.VLM_CHAT,
+            supported_task_types=(TaskType.CHAT_SFT, TaskType.CHAT_RL),
+            trainer_backends=(
+                TrainerBackend.LLAMAFACTORY,
+                TrainerBackend.VERL,
+            ),
+            runtime_backends=(RuntimeBackend.OPENAI_CHAT_VLLM,),
+            checkpoint_source="Qwen/Qwen3-VL-8B-Instruct",
+            checkpoint_format="huggingface",
+            required_modalities=("image", "text", "video"),
+            dataset_adapter_keys=("chat_sft", "chat_rl"),
+            launcher_type="python_module",
+            default_precision="bf16",
+            distributed_requirements={"min_gpus": 1},
+            environment_tags=("local", "gpu", "qwen"),
+        ),
+        ModelRegistryEntry(
+            model_id="Qwen/Qwen3-VL-32B-Thinking",
+            model_family=ModelFamily.VLM_CHAT,
+            supported_task_types=(TaskType.CHAT_SFT, TaskType.CHAT_RL),
+            trainer_backends=(
+                TrainerBackend.LLAMAFACTORY,
+                TrainerBackend.VERL,
+            ),
+            runtime_backends=(RuntimeBackend.OPENAI_CHAT_VLLM,),
+            checkpoint_source="Qwen/Qwen3-VL-32B-Thinking",
+            checkpoint_format="huggingface",
+            required_modalities=("image", "text", "video"),
+            dataset_adapter_keys=("chat_sft", "chat_rl"),
+            launcher_type="python_module",
+            default_precision="bf16",
+            distributed_requirements={"min_gpus": 1},
+            environment_tags=("local", "gpu", "qwen"),
+        ),
+        ModelRegistryEntry(
             model_id="qwen3-vl-4b-instruct",
             model_family=ModelFamily.VLM_CHAT,
             supported_task_types=(TaskType.CHAT_SFT, TaskType.CHAT_RL),
@@ -97,4 +151,3 @@ def get_model_entry(model_id: str) -> ModelRegistryEntry:
 
 def iter_entries() -> tuple[ModelRegistryEntry, ...]:
     return tuple(MODEL_REGISTRY.values())
-
